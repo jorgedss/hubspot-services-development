@@ -1,0 +1,7 @@
+{
+  "config": {
+    "entrypoint": "app/functions/createContract.js"
+  },
+  "uid": "createContract",
+  "type": "app-function"
+}

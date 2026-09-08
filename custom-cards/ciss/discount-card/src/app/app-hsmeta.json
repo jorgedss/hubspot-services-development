@@ -1,0 +1,35 @@
+{
+  "uid": "discount_card_app",
+  "type": "app",
+  "config": {
+    "description": "Card para aplicação de descontos nos itens de linha com base no tipo de contrato.",
+    "name": "discount-card-App",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "crm.objects.line_items.read",
+        "crm.objects.line_items.write",
+        "crm.objects.contacts.read",
+        "crm.schemas.contacts.read",
+        "crm.objects.owners.read"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": ["https://api.hubapi.com"],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@example.com",
+      "documentationUrl": "https://example.com/docs",
+      "supportUrl": "https://example.com/support",
+      "supportPhone": "+18005555555"
+    }
+  }
+}

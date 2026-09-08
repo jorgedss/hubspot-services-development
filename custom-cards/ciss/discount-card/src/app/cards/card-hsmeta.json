@@ -1,0 +1,10 @@
+{
+  "uid": "discount_card_card",
+  "type": "card",
+  "config": {
+    "name": "Desconto",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/Discount.tsx",
+    "objectTypes": ["deals"]
+  }
+}

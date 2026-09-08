@@ -1,0 +1,28 @@
+{
+  "config": {
+    "auth": {
+      "type": "static",
+      "optionalScopes": [],
+      "requiredScopes": [
+        "crm.objects.deals.write",
+        "crm.objects.deals.read",
+        "crm.objects.products.read",
+        "e-commerce",
+        "crm.objects.line_items.read",
+        "crm.objects.line_items.write"
+      ],
+      "conditionallyRequiredScopes": []
+    },
+    "name": "Lançamento de Contratos App",
+    "description": "Private app for launching and managing contracts directly from CRM deals.",
+    "isUserLevel": false,
+    "distribution": "PRIVATE",
+    "permittedUrls": {
+      "img": [],
+      "fetch": [],
+      "iframe": []
+    }
+  },
+  "uid": "contract_launch_app",
+  "type": "app"
+}

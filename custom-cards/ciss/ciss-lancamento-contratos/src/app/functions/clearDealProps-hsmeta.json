@@ -1,0 +1,7 @@
+{
+  "config": {
+    "entrypoint": "app/functions/clearDealProps.js"
+  },
+  "uid": "clearDealProps",
+  "type": "app-function"
+}

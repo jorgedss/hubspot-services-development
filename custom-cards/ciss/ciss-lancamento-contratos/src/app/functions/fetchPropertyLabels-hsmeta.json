@@ -1,0 +1,7 @@
+{
+  "config": {
+    "entrypoint": "app/functions/fetchPropertyLabels.js"
+  },
+  "uid": "fetchPropertyLabels",
+  "type": "app-function"
+}

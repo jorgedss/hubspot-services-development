@@ -1,0 +1,8 @@
+{
+  "uid": "fetchDiscountApproval",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/FetchDiscountApproval.js",
+    "secretKeys": []
+  }
+}

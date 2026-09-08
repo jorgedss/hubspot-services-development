@@ -1,0 +1,8 @@
+{
+  "uid": "groupContracts",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/GroupContracts.js",
+    "secretKeys": []
+  }
+}

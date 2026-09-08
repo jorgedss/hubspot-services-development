@@ -1,0 +1,8 @@
+{
+  "uid": "aplicarDesconto",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/aplicarDesconto.js",
+    "secretKeys": []
+  }
+}

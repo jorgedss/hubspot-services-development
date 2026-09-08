@@ -1,0 +1,12 @@
+{
+  "uid": "locacao_equipamentos_card_card",
+  "type": "card",
+  "config": {
+    "name": "Locação de Equipamentos",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/LocacaoEquipamentos.tsx",
+    "objectTypes": [
+      "DEALS"
+    ]
+  }
+}

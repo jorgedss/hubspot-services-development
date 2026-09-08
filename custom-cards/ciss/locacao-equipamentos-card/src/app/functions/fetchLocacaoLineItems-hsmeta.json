@@ -1,0 +1,8 @@
+{
+  "uid": "fetchLocacaoLineItems",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/fetchLocacaoLineItems.js",
+    "secretKeys": []
+  }
+}

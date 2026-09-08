@@ -1,0 +1,15 @@
+{
+  "config": {
+    "name": "Lançamentos",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/ContractLaunch.jsx",
+    "description": "Launch and manage contracts directly from CRM deals.",
+    "objectTypes": ["deals"],
+    "previewImage": {
+      "file": "/app/cards/assets/example-card-preview.png",
+      "altText": "Example app card UI extension, demonstrating a card with a title, description, and a button"
+    }
+  },
+  "uid": "contract_launch_card",
+  "type": "card"
+}

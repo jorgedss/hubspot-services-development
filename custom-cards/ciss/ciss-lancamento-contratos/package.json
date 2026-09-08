@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@hubspot/cli": "^8.6.0"
+  }
+}
