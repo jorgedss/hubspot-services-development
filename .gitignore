@@ -1,0 +1,9 @@
+# environment
+.env
+
+# build output
+.vite
+**/dist
+
+# dependencies
+**/node_modules

@@ -175,10 +175,11 @@ const formatCurrency = (value: number): string =>
 interface CategoryConfig {
   field: FlatField;
   title: string;
+  netColumnTitle?: string;
 }
 
 const CATEGORIES: CategoryConfig[] = [
-  { field: 'licenca', title: 'Licença' },
+  { field: 'licenca', title: 'Licença', netColumnTitle: 'Valor Licença Líquido' },
   { field: 'glt', title: 'Mensalidade' },
 ];
 
@@ -201,7 +202,7 @@ const CategoryTable = ({
   lines,
   onChangeValue,
 }: CategoryTableProps) => {
-  const { field, title } = config;
+  const { field, title, netColumnTitle } = config;
 
   // O rodapé Total sai do MESMO array das linhas exibidas. Somar conjuntos
   // diferentes daria um total que as linhas visíveis não reproduzem.
@@ -223,7 +224,7 @@ const CategoryTable = ({
         <TableRow>
           <TableHeader>Sistema</TableHeader>
           <TableHeader width="min">Valor Bruto</TableHeader>
-          <TableHeader width="min">Valor Líquido</TableHeader>
+          <TableHeader width="min">{netColumnTitle ?? 'Valor Líquido'}</TableHeader>
           <TableHeader width="min">% Desc.</TableHeader>
         </TableRow>
       </TableHead>
