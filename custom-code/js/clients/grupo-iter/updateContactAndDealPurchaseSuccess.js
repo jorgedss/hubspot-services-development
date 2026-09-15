@@ -103,9 +103,12 @@ const toDateString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
-// Serializa um valor estruturado (array/objeto) para JSON.
+// Serializa um valor estruturado para JSON. Quando o valor já é uma string
+// (cenário real: o input field entrega cf_product como string JSON pronta), a
+// string é gravada como está; quando é array/objeto, é serializada.
 const toJsonString = (valor) => {
-  if (valor == null) return null;
+  if (valor == null || valor === "") return null;
+  if (typeof valor === "string") return valor;
   return JSON.stringify(valor);
 };
 
