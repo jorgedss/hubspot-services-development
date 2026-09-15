@@ -4,9 +4,9 @@ const axios = require("axios");
 // Grupo Iter - atualização de contato via webhook (SIG).
 //
 // Contexto: action de custom code dentro de um workflow cujo trigger é um
-// webhook. A chave de inscri��o do workflow é o e-mail. O payload é o corpo do
+// webhook. A chave de inscriçao do workflow é o e-mail. O payload é o corpo do
 // evento recebido pelo webhook (formato SIG) e este script mapeia cada campo
-// para a propriedade do contato na HubSpot, aplicando as convers�es de tipo.
+// para a propriedade do contato na HubSpot, aplicando as conversões de tipo.
 //
 // O contato inscrito no workflow já fornece o record id em event.object.objectId
 // e é atualizado via PATCH na API v3 de contacts. O token de autenticacao vem da
