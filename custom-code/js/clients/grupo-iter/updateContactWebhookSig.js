@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 // ---------------------------------------------------------------------------
-// Grupo Iter - atualização de contato via webhook (SIG).
+// Grupo Iter - form-submit (SIG).
 //
 // Contexto: action de custom code dentro de um workflow cujo trigger é um
 // webhook. A chave de inscriçao do workflow é o e-mail. O payload é o corpo do
