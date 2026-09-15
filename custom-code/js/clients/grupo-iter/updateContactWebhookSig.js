@@ -154,12 +154,15 @@ exports.main = async (event, callback) => {
   // workflow e chegam em event.inputFields.
   const payload = event.inputFields || {};
 
-  const email = String(payload.email || "").trim().toLowerCase();
-  if (!email) {
-    return respond({ erro: "Campo email ausente ou vazio no payload do webhook." });
+  // O contato inscrito no workflow já está resolvido; o record id vem direto do
+  // evento, sem necessidade de busca por e-mail.
+  const contactId = String(event.object?.objectId || "");
+
+  if (!contactId) {
+    return respond({ erro: "Record id do contato ausente no evento (event.object.objectId)." });
   }
 
-  console.log(`[atualizarContatoSIG] processando contato ${email}`);
+  console.log(`[atualizarContatoSIG] processando contato ${contactId}`);
 
   const hubspotClient = axios.create({
     baseURL: "https://api.hubapi.com",
@@ -187,27 +190,6 @@ exports.main = async (event, callback) => {
   }
 
   try {
-    // Localiza o contato pelo e-mail (chave de inscrição do workflow).
-    const searchResponse = await withStep("localizarContato", () =>
-      hubspotClient.post("/crm/v3/objects/contacts/search", {
-        filterGroups: [
-          { filters: [{ propertyName: "email", operator: "EQ", value: email }] },
-        ],
-        properties: ["email"],
-        limit: 1,
-      }),
-    );
-
-    const contact = (searchResponse.data.results || [])[0];
-    if (!contact) {
-      return respond({
-        status: "nao_encontrado",
-        erro: `Contato ${email} não encontrado no portal.`,
-      });
-    }
-
-    const contactId = contact.id;
-
     await withStep("atualizarContato", () =>
       hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
         properties,
