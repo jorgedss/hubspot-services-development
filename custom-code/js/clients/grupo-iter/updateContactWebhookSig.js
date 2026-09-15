@@ -150,8 +150,9 @@ exports.main = async (event, callback) => {
       },
     });
 
-  // O corpo do webhook pode chegar em event.body (raw) ou como campos diretos.
-  const payload = event.body ? safeParse(event.body, event) : event;
+  // As propriedades recebidas do webhook são expostas como input fields do
+  // workflow e chegam em event.inputFields.
+  const payload = event.inputFields || {};
 
   const email = String(payload.email || "").trim().toLowerCase();
   if (!email) {
@@ -230,17 +231,6 @@ exports.main = async (event, callback) => {
 };
 
 // --- helpers ---------------------------------------------------------------
-
-const safeParse = (raw, fallback) => {
-  if (!raw) return fallback;
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed ?? fallback;
-  } catch (err) {
-    console.error("[atualizarContatoSIG] invalid JSON:", err.message);
-    return fallback;
-  }
-};
 
 const withStep = async (step, fn) => {
   try {
