@@ -8,9 +8,9 @@ const axios = require("axios");
 // evento recebido pelo webhook (formato SIG) e este script mapeia cada campo
 // para a propriedade do contato na HubSpot, aplicando as convers�es de tipo.
 //
-// O contato é localizado pelo e-mail e atualizado via PATCH na API v3 de
-// contacts. O token de autentica��o vem da secret
-// `HUBSPOT_TOKEN_INTEGRACAO_SIG`, nunca hardcoded.
+// O contato inscrito no workflow já fornece o record id em event.object.objectId
+// e é atualizado via PATCH na API v3 de contacts. O token de autenticacao vem da
+// secret `HUBSPOT_TOKEN_INTEGRACAO_SIG`, nunca hardcoded.
 // ---------------------------------------------------------------------------
 
 // As datas "data e hora" do payload vêm em horário local do cliente
@@ -27,7 +27,7 @@ const FIELD_MAP = [
   { from: "email", to: "email", type: "text" },
   { from: "name", to: "firstname", type: "text" },
   { from: "cf_sobrenome", to: "lastname", type: "text" },
-  { from: "cf_data_de_nascimento", to: "data_de_nascimento", type: "date" },
+  { from: "cf_data_de_nascimento", to: "data_de_nascimento", type: "date", dateFormat: "MM/DD/YYYY" },
   { from: "cf_telefone_contato", to: "phone", type: "text" },
   { from: "cf_cpf_passaporte", to: "cpf", type: "text" },
   { from: "country", to: "country", type: "text" },
@@ -40,12 +40,12 @@ const FIELD_MAP = [
   { from: "cf_complemento", to: "cf_complemento", type: "text" },
   { from: "cf_nome_bilhete", to: "cf_nome_bilhete", type: "text" },
   { from: "cf_tipo_bilhete", to: "cf_tipo_bilhete", type: "text" },
-  { from: "cf_data_visita", to: "cf_data_visita", type: "datetime", timeField: "cf_hora_visita" },
+  { from: "cf_data_visita", to: "cf_data_visita", type: "datetime", timeField: "cf_hora_visita", dateFormat: "MM/DD/YYYY" },
   { from: "available_for_mailing", to: "available_for_mailing", type: "checkbox" },
   { from: "cf_aceite_whatsapp", to: "cf_aceite_whatsapp", type: "ackcheckbox" },
   { from: "cf_aceite_regras", to: "cf_aceite_regras", type: "ackcheckbox" },
-  { from: "cf_data_compra", to: "data_do_envio", type: "date" },
-  { from: "cf_visita_esperada", to: "data_e_hora_da_visita_esperada", type: "datetime", timeField: "cf_hora_visita_selecionada" },
+  { from: "cf_data_compra", to: "data_do_envio", type: "date", dateFormat: "DD/MM/YYYY" },
+  { from: "cf_visita_esperada", to: "data_e_hora_da_visita_esperada", type: "datetime", timeField: "cf_hora_visita_selecionada", dateFormat: "DD/MM/YYYY" },
   { from: "cf_lingua", to: "cf_language", type: "text" },
   { from: "cf_localizador", to: "cf_localizador", type: "text" },
   { from: "cf_produto", to: "cf_produto", type: "text" },
@@ -80,29 +80,41 @@ const toNumber = (valor) => {
 
 const padNumber = (number) => String(number).padStart(2, "0");
 
+// Extrai mês, dia e ano de uma data "DD/MM/YYYY" ou "MM/DD/YYYY", conforme o
+// formato explicitado em dateFormat. Retorna null quando a data é ilegível ou
+// os componentes são inválidos.
+const parseDateComponents = (raw, dateFormat) => {
+  const dateMatch = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(raw || ""));
+  if (!dateMatch) return null;
+
+  const first = Number(dateMatch[1]);
+  const second = Number(dateMatch[2]);
+  const year = Number(dateMatch[3]);
+
+  const month = dateFormat === "DD/MM/YYYY" ? second : first;
+  const day = dateFormat === "DD/MM/YYYY" ? first : second;
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { month, day, year };
+};
+
 // Converte uma data local (só dia) para a string YYYY-MM-DD, sem deslocar o dia
 // por fuso: usa os componentes numéricos do payload diretamente.
-const toDateString = (raw) => {
-  const dateMatch = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(raw));
-  if (!dateMatch) return null;
-  const month = Number(dateMatch[1]);
-  const day = Number(dateMatch[2]);
-  const year = Number(dateMatch[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+const toDateString = (raw, dateFormat) => {
+  const components = parseDateComponents(raw, dateFormat);
+  if (!components) return null;
+  const { month, day, year } = components;
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
-// Combina uma data "MM/DD/YYYY" com um horário "HH:mm:ss" (ambos em horário
-// local do cliente) e devolve timestamp em milissegundos (UTC), o formato que a
-// HubSpot aceita para propriedades "date and time". Retorna null se a data
-// estiver ausente/ilegível.
-const toDateTimeMs = (rawDate, rawTime) => {
-  const dateMatch = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(rawDate || ""));
-  if (!dateMatch) return null;
-  const month = Number(dateMatch[1]);
-  const day = Number(dateMatch[2]);
-  const year = Number(dateMatch[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+// Combina uma data com um horário "HH:mm:ss" (ambos em horário local do
+// cliente) e devolve timestamp em milissegundos (UTC), o formato que a HubSpot
+// aceita para propriedades "date and time". Retorna null se a data estiver
+// ausente/ilegível.
+const toDateTimeMs = (rawDate, rawTime, dateFormat) => {
+  const components = parseDateComponents(rawDate, dateFormat);
+  if (!components) return null;
+  const { month, day, year } = components;
 
   const timeMatch = /^\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(
     String(rawTime || "00:00:00"),
@@ -128,15 +140,16 @@ const convert = (field, valor) => {
     case "number":
       return toNumber(valor);
     case "date":
-      return toDateString(valor);
+      return toDateString(valor, field.dateFormat);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
 };
 
-// Conversão específica para datetime, que precisa do campo de horário.
+// Conversão específica para datetime, que precisa do campo de horário e do
+// formato de data.
 const convertDateTime = (field, dateVal, timeVal) =>
-  toDateTimeMs(dateVal, timeVal);
+  toDateTimeMs(dateVal, timeVal, field.dateFormat);
 
 exports.main = async (event, callback) => {
   const respond = (payload) =>
