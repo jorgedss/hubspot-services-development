@@ -61,8 +61,8 @@ const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
 const toBoolean = (valor) => {
   if (typeof valor === "boolean") return valor;
   if (valor == null || valor === "") return null;
-  const s = String(valor).trim().toLowerCase();
-  if (FALSE_WORDS.has(s)) return false;
+  const normalizedValue = String(valor).trim().toLowerCase();
+  if (FALSE_WORDS.has(normalizedValue)) return false;
   return true;
 };
 
@@ -74,22 +74,22 @@ const toAckBoolean = (valor) => {
 
 const toNumber = (valor) => {
   if (valor == null || valor === "") return null;
-  const n = Number(String(valor).replace(",", "."));
-  return Number.isFinite(n) ? n : null;
+  const numericValue = Number(String(valor).replace(",", "."));
+  return Number.isFinite(numericValue) ? numericValue : null;
 };
 
-const pad = (n) => String(n).padStart(2, "0");
+const padNumber = (number) => String(number).padStart(2, "0");
 
 // Converte uma data local (só dia) para a string YYYY-MM-DD, sem deslocar o dia
 // por fuso: usa os componentes numéricos do payload diretamente.
 const toDateString = (raw) => {
-  const m = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(raw));
-  if (!m) return null;
-  const month = Number(m[1]);
-  const day = Number(m[2]);
-  const year = Number(m[3]);
+  const dateMatch = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(raw));
+  if (!dateMatch) return null;
+  const month = Number(dateMatch[1]);
+  const day = Number(dateMatch[2]);
+  const year = Number(dateMatch[3]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return `${year}-${pad(month)}-${pad(day)}`;
+  return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
 // Combina uma data "MM/DD/YYYY" com um horário "HH:mm:ss" (ambos em horário
@@ -97,19 +97,19 @@ const toDateString = (raw) => {
 // HubSpot aceita para propriedades "date and time". Retorna null se a data
 // estiver ausente/ilegível.
 const toDateTimeMs = (rawDate, rawTime) => {
-  const mDate = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(rawDate || ""));
-  if (!mDate) return null;
-  const month = Number(mDate[1]);
-  const day = Number(mDate[2]);
-  const year = Number(mDate[3]);
+  const dateMatch = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(rawDate || ""));
+  if (!dateMatch) return null;
+  const month = Number(dateMatch[1]);
+  const day = Number(dateMatch[2]);
+  const year = Number(dateMatch[3]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
-  const mTime = /^\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(
+  const timeMatch = /^\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(
     String(rawTime || "00:00:00"),
   );
-  const hour = mTime ? Number(mTime[1]) : 0;
-  const minute = mTime ? Number(mTime[2]) : 0;
-  const second = mTime && mTime[3] ? Number(mTime[3]) : 0;
+  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const minute = timeMatch ? Number(timeMatch[2]) : 0;
+  const second = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
 
   if (hour > 23 || minute > 59 || second > 59) return null;
 
