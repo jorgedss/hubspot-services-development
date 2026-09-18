@@ -19,7 +19,8 @@ custom-code/js/clients/grupo-iter/
 │   ├── formSubmit.js          # evento form-submit
 │   └── compraSiteSucesso.js   # evento compra-site-sucesso
 ├── bondinho/
-│   └── compraSiteSucesso.js   # evento compra-site-sucesso
+│   ├── compraSiteSucesso.js          # evento compra-site-sucesso
+│   └── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
 └── README.md
 ```
 
@@ -29,12 +30,14 @@ custom-code/js/clients/grupo-iter/
 
 Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554145`.
 
-Pipeline e estágio do deal: `Venda de Bilhete` (927835212) / `Venda realizada`
-(1422040488).
+Pipeline e estágios do deal: `Venda de Bilhete` (927835212). Estágio `Venda realizada`
+(1422040488) no evento de sucesso, e `Perdido` (1422054714) com `motivo_de_perda =
+Pagamento recusado` no evento de antifraude.
 
 | Evento | Script | Conta | Endpoint / link de cadastro |
 |---|---|---|---|
 | compra-site-sucesso | `bondinho/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/WTrSqX5` |
+| compra-site-negada-antifraude | `bondinho/compraSiteNegadaAntifraude.js` | sandbox | _(a preencher após cadastro)_ |
 
 ---
 

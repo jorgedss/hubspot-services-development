@@ -1,17 +1,18 @@
 const axios = require("axios");
 
 // ---------------------------------------------------------------------------
-// Grupo Iter - BU Bondinho - evento compra-site-sucesso (SIG).
+// Grupo Iter - BU Bondinho - evento compra-site-negada-antifraude (SIG).
 //
 // Contexto: action de custom code em um workflow cujo trigger é webhook. A
-// chave de inscrição é o e-mail. O evento atualiza o CONTATO inscrito no
-// workflow e faz UPSERT de um DEAL associado.
+// chave de inscrição é o e-mail. O evento cria/atualiza o CONTATO inscrito no
+// workflow e cria um DEAL na etapa Perdido, com motivo de perda "Pagamento
+// recusado".
 //
 // O contato é identificado por event.object.objectId. O deal é resolvido pela
-// propriedade `booking` (que recebe o cf_id_pedido); quando não existe, é
-// criado no pipeline 927835212 (Venda de Bilhete), estágio 1422040488 (Venda
-// realizada). A associação contato->deal é feita após resolver/gravar os dois
-// registros.
+// propriedade `booking` (que recebe o cf_id_pedido); quando não existe, é criado
+// no pipeline 927835212 (Venda de Bilhete), estágio 1422054714 (Perdido), com
+// motivo_de_perda "Pagamento recusado". A associação contato->deal é feita após
+// gravar os dois registros.
 //
 // Cada unidade de negócio tem uma brand: a propriedade
 // hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
@@ -22,13 +23,16 @@ const axios = require("axios");
 //   - cf_accept_communication: Sim/SIM/1/true -> true; qualquer outro -> false.
 //   - cf_socio: true/sim/1 -> true; false/não/0 -> false (dropdown true/false).
 //   - cf_crianca: > 0 -> true; vazio/0/null -> false (tem criança ou não).
+//   - cf_data_pedido: DD-MM-YYYY -> YYYY-MM-DD.
+//   - cf_date_visit_expected: MM/DD/YYYY HH:mm:ss -> datetime/date.
 //
 // O token de autenticação vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
 // nunca hardcoded.
 // ---------------------------------------------------------------------------
 
 const PIPELINE_ID = "927835212";
-const PIPELINE_STAGE_ID = "1422040488";
+const PIPELINE_STAGE_ID = "1422054714";
+const LOSS_REASON = "Pagamento recusado";
 const BUSINESS_UNIT_ID = "4554145";
 
 const CONTACT_FIELDS = [
@@ -44,11 +48,11 @@ const CONTACT_FIELDS = [
   { from: "cf_valor_pedido", to: "cf_valor_pedido", type: "number" },
   { from: "cf_typepayments", to: "cf_typepayments", type: "payments" },
   { from: "cf_status_item", to: "status_item", type: "text" },
-  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_category", to: "cf_category", type: "text" },
   { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
-  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "datetime" },
   { from: "cf_lingua", to: "cf_language", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "text" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
@@ -70,11 +74,11 @@ const DEAL_FIELDS = [
   { from: "cf_valor_pedido", to: "amount", type: "number" },
   { from: "cf_typepayments", to: "cf_typepayments", type: "payments" },
   { from: "cf_status_item", to: "status_item", type: "text" },
-  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_category", to: "cf_category", type: "text" },
   { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
-  { from: "cf_date_visit_expected", to: "data_da_visita", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_date_visit_expected", to: "data_da_visita", type: "dateTimeVisita" },
   { from: "cf_lingua", to: "lingua", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "text" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
@@ -86,8 +90,6 @@ const DEAL_FIELDS = [
 const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
 const TRUE_WORDS = new Set(["true", "sim", "s", "y", "yes", "1"]);
 
-// Aceites: trata Sim/SIM/1/true como true; qualquer outro valor preenchido é
-// false (a regra do evento é "1 = Sim, demais = Não").
 const toAcceptance = (valor) => {
   if (typeof valor === "boolean") return valor;
   if (valor == null || valor === "") return null;
@@ -96,7 +98,6 @@ const toAcceptance = (valor) => {
   return false;
 };
 
-// Dropdown true/false (cf_socio): true/sim/1 -> true; false/não/0 -> false.
 const toBooleanDropdown = (valor) => {
   if (typeof valor === "boolean") return valor;
   if (valor == null || valor === "") return null;
@@ -119,12 +120,9 @@ const toPayments = (valor) => {
   return "Pix";
 };
 
-// cf_crianca: maior que 0 -> true; vazio/0 -> false (indica se tem criança).
 const toChildFlag = (valor) => {
   const numericValue = parseFloat(valor);
-  if (Number.isFinite(numericValue) && numericValue > 0) return true;
-  if (valor == null || valor === "") return false;
-  if (Number.isFinite(numericValue) && numericValue <= 0) return false;
+  if (Number.isFinite(numericValue)) return numericValue > 0;
   return false;
 };
 
@@ -136,20 +134,54 @@ const toNumber = (valor) => {
 
 const padNumber = (number) => String(number).padStart(2, "0");
 
-const parseDateComponents = (raw) => {
-  const dateMatch = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
-  if (!dateMatch) return null;
-  const day = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const year = Number(dateMatch[3]);
+// cf_data_pedido: DD-MM-YYYY -> YYYY-MM-DD.
+const parseDateDdMmYyyy = (raw) => {
+  const match = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return { day, month, year };
 };
 
 const toDateString = (raw) => {
-  const components = parseDateComponents(raw);
+  const components = parseDateDdMmYyyy(raw);
   if (!components) return null;
   const { day, month, year } = components;
+  return `${year}-${padNumber(month)}-${padNumber(day)}`;
+};
+
+// cf_date_visit_expected: MM/DD/YYYY HH:mm:ss (hora local BR, UTC-3).
+// Retorna timestamp em ms (UTC) para propriedade datetime do contato.
+const parseDateMmDdYyyy = (raw) => {
+  const match = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(raw || ""));
+  if (!match) return null;
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const timeMatch = /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(String(raw || ""));
+  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const minute = timeMatch ? Number(timeMatch[2]) : 0;
+  const second = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
+  if (hour > 23 || minute > 59 || second > 59) return null;
+
+  return Date.UTC(year, month - 1, day, hour, minute, second) + 3 * 60 * 60 * 1000;
+};
+
+// Datetime -> timestamp ms (contato, propriedade datetime).
+const toDateTimeMs = (raw) => parseDateMmDdYyyy(raw);
+
+// Datetime -> date "YYYY-MM-DD" (deal, propriedade date pura).
+const toDateTimeDate = (raw) => {
+  const match = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(raw || ""));
+  if (!match) return null;
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
@@ -172,6 +204,10 @@ const convertField = (field, payload) => {
       return toNumber(valor);
     case "date":
       return toDateString(valor);
+    case "datetime":
+      return toDateTimeMs(valor);
+    case "dateTimeVisita":
+      return toDateTimeDate(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
@@ -183,7 +219,6 @@ const buildProperties = (fields, payload) => {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
-  // A brand da unidade de negócio é obrigatória em contato e deal.
   properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
   return properties;
 };
@@ -213,7 +248,7 @@ exports.main = async (event, callback) => {
   }
 
   console.log(
-    `[bondinhoCompraSiteSucesso] contato ${contactId} | booking ${bookingKey}`,
+    `[bondinhoCompraSiteNegada] contato ${contactId} | booking ${bookingKey}`,
   );
 
   const hubspotClient = axios.create({
@@ -241,17 +276,25 @@ exports.main = async (event, callback) => {
       findDealByBooking(bookingKey, hubspotClient),
     );
 
+    // O deal da recusa é sempre criado na etapa Perdido, com o motivo de perda.
+    const dealToWrite = {
+      ...dealProperties,
+      pipeline: PIPELINE_ID,
+      dealstage: PIPELINE_STAGE_ID,
+      motivo_de_perda: LOSS_REASON,
+    };
+
     let resolvedDealId;
     if (dealId) {
       await withStep("atualizarDeal", () =>
         hubspotClient.patch(`/crm/v3/objects/deals/${dealId}`, {
-          properties: dealProperties,
+          properties: dealToWrite,
         }),
       );
       resolvedDealId = dealId;
     } else {
       resolvedDealId = await withStep("criarDeal", () =>
-        createDeal(dealProperties, hubspotClient),
+        createDeal(dealToWrite, hubspotClient),
       );
     }
 
@@ -261,7 +304,7 @@ exports.main = async (event, callback) => {
     );
 
     console.log(
-      `[bondinhoCompraSiteSucesso] contato ${contactId} atualizado; deal ${resolvedDealId}`,
+      `[bondinhoCompraSiteNegada] contato ${contactId} atualizado; deal ${resolvedDealId} na etapa Perdido`,
     );
 
     return respond({
@@ -271,7 +314,7 @@ exports.main = async (event, callback) => {
     });
   } catch (error) {
     const message = buildErrorMessage(error);
-    console.error("[bondinhoCompraSiteSucesso] error:", message);
+    console.error("[bondinhoCompraSiteNegada] error:", message);
     return respond({ erro: message });
   }
 };
@@ -292,11 +335,7 @@ const findDealByBooking = async (bookingKey, hubspotClient) => {
 
 const createDeal = async (properties, hubspotClient) => {
   const { data } = await hubspotClient.post("/crm/v3/objects/deals", {
-    properties: {
-      pipeline: PIPELINE_ID,
-      dealstage: PIPELINE_STAGE_ID,
-      ...properties,
-    },
+    properties,
   });
   return data.id;
 };
