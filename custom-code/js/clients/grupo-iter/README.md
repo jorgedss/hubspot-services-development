@@ -22,7 +22,8 @@ custom-code/js/clients/grupo-iter/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
 │   ├── compraSiteSucessoSocio.js     # evento compra-site-sucesso-socio
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
-│   └── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
+│   ├── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
+│   └── carrinhoAbandonado.js         # evento carrinho-abandonado
 └── README.md
 ```
 
@@ -42,6 +43,7 @@ Pagamento recusado` no evento de antifraude.
 | compra-site-negada-antifraude | `bondinho/compraSiteNegadaAntifraude.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/rNsPgTD` |
 | compra-site-negada-cartao | `bondinho/compraSiteNegadaCartao.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/LjoHHQQ` |
 | compra-site-sucesso-socio | `bondinho/compraSiteSucessoSocio.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/JxoIurd` |
+| carrinho-abandonado | `bondinho/carrinhoAbandonado.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/X8dakrW` |
 
 ---
 
