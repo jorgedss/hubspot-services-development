@@ -34,7 +34,7 @@ Pipeline e estágio do deal: `Venda de Bilhete` (927835212) / `Venda realizada`
 
 | Evento | Script | Conta | Endpoint / link de cadastro |
 |---|---|---|---|
-| compra-site-sucesso | `bondinho/compraSiteSucesso.js` | sandbox | _(a preencher após cadastro)_ |
+| compra-site-sucesso | `bondinho/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/WTrSqX5` |
 
 ---
 
