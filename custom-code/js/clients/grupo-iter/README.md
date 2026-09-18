@@ -37,7 +37,7 @@ Pagamento recusado` no evento de antifraude.
 | Evento | Script | Conta | Endpoint / link de cadastro |
 |---|---|---|---|
 | compra-site-sucesso | `bondinho/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/WTrSqX5` |
-| compra-site-negada-antifraude | `bondinho/compraSiteNegadaAntifraude.js` | sandbox | _(a preencher após cadastro)_ |
+| compra-site-negada-antifraude | `bondinho/compraSiteNegadaAntifraude.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/rNsPgTD` |
 
 ---
 
