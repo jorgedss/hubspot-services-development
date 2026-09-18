@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 // ---------------------------------------------------------------------------
-// Grupo Iter - evento bondinho-compra-site-sucesso (SIG).
+// Grupo Iter - BU Bondinho - evento compra-site-sucesso (SIG).
 //
 // Contexto: action de custom code em um workflow cujo trigger é webhook. A
 // chave de inscrição é o e-mail. O evento atualiza o CONTATO inscrito no
@@ -9,8 +9,13 @@ const axios = require("axios");
 //
 // O contato é identificado por event.object.objectId. O deal é resolvido pela
 // propriedade `booking` (que recebe o cf_id_pedido); quando não existe, é
-// criado no pipeline 927835212, estágio 1422040488. A associação contato->deal
-// é feita após resolver/gravar os dois registros.
+// criado no pipeline 927835212 (Venda de Bilhete), estágio 1422040488 (Venda
+// realizada). A associação contato->deal é feita após resolver/gravar os dois
+// registros.
+//
+// Cada unidade de negócio tem uma brand: a propriedade
+// hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
+// no contato quanto no deal.
 //
 // Regras de conversão específicas deste evento:
 //   - cf_typepayments: "3" vira "Cartão"; qualquer outro valor vira "Pix".
@@ -18,12 +23,13 @@ const axios = require("axios");
 //   - cf_socio: true/sim/1 -> true; false/não/0 -> false (dropdown true/false).
 //   - cf_crianca: > 0 -> true; vazio/0/null -> false (tem criança ou não).
 //
-// O token de autenticação vem da secret HUBSPOT_TOKEN_INTEGRACAO_SIG, nunca
-// hardcoded.
+// O token de autenticação vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
+// nunca hardcoded.
 // ---------------------------------------------------------------------------
 
 const PIPELINE_ID = "927835212";
 const PIPELINE_STAGE_ID = "1422040488";
+const BUSINESS_UNIT_ID = "4554145";
 
 const CONTACT_FIELDS = [
   { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
@@ -170,6 +176,8 @@ const buildProperties = (fields, payload) => {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
+  // A brand da unidade de negócio é obrigatória em contato e deal.
+  properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
   return properties;
 };
 
@@ -204,7 +212,7 @@ exports.main = async (event, callback) => {
   const hubspotClient = axios.create({
     baseURL: "https://api.hubapi.com",
     headers: {
-      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_INTEGRACAO_SIG}`,
+      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG}`,
       "Content-Type": "application/json",
     },
     timeout: 18000,

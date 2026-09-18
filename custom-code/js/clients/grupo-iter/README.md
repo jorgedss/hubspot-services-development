@@ -1,0 +1,46 @@
+# Grupo Iter - Custom Code SIG
+
+Scripts de custom code (Node.js) para as integrações SIG do Grupo Iter, organizados por
+unidade de negócio (BU). Cada script é uma action de custom code em um workflow cujo
+trigger é um webhook; a chave de inscrição é o e-mail.
+
+Token de autenticação: cada portal (produção ou sandbox) expõe a secret com o nome
+`HUBSPOT_TOKEN_INTEGRACAO_SIG` (produção) ou `HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG`
+(sandbox). O script lê o valor via `process.env` e nunca o recebe hardcoded.
+
+> Campos de data do SIG chegam em formato `DD-MM-YYYY` (hífen). Campos de valores
+> checkbox/aceite usam as regras documentadas em cada script.
+
+## Estrutura
+
+```
+custom-code/js/clients/grupo-iter/
+├── caracol/
+│   ├── formSubmit.js          # evento form-submit
+│   └── compraSiteSucesso.js   # evento compra-site-sucesso
+├── bondinho/
+│   └── compraSiteSucesso.js   # evento compra-site-sucesso
+└── README.md
+```
+
+---
+
+## Bondinho
+
+Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554145`.
+
+Pipeline e estágio do deal: `Venda de Bilhete` (927835212) / `Venda realizada`
+(1422040488).
+
+| Evento | Script | Conta | Endpoint / link de cadastro |
+|---|---|---|---|
+| compra-site-sucesso | `bondinho/compraSiteSucesso.js` | sandbox | _(a preencher após cadastro)_ |
+
+---
+
+## Caracol
+
+| Evento | Script | Conta | Endpoint / link de cadastro |
+|---|---|---|---|
+| form-submit | `caracol/formSubmit.js` | _(a definir)_ | _(a preencher após cadastro)_ |
+| compra-site-sucesso | `caracol/compraSiteSucesso.js` | _(a definir)_ | _(a preencher após cadastro)_ |
