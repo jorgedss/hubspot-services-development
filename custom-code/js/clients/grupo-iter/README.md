@@ -17,7 +17,8 @@ Token de autenticação: cada portal (produção ou sandbox) expõe a secret com
 custom-code/js/clients/grupo-iter/
 ├── caracol/
 │   ├── formSubmit.js          # evento form-submit
-│   └── compraSiteSucesso.js   # evento compra-site-sucesso
+│   ├── compraSiteSucesso.js   # evento compra-site-sucesso
+│   └── addToCart.js           # evento add-to-cart
 ├── bondinho/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
 │   ├── compraSiteSucessoSocio.js     # evento compra-site-sucesso-socio
@@ -49,7 +50,10 @@ Pagamento recusado` no evento de antifraude.
 
 ## Caracol
 
+Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554143`.
+
 | Evento | Script | Conta | Endpoint / link de cadastro |
 |---|---|---|---|
+| add-to-cart | `caracol/addToCart.js` | sandbox | _(a preencher após cadastro)_ |
 | form-submit | `caracol/formSubmit.js` | _(a definir)_ | _(a preencher após cadastro)_ |
 | compra-site-sucesso | `caracol/compraSiteSucesso.js` | _(a definir)_ | _(a preencher após cadastro)_ |
