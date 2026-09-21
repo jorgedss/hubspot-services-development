@@ -1,27 +1,35 @@
 const axios = require("axios");
 
 // ---------------------------------------------------------------------------
-// Grupo Iter - evento compra-site-sucesso (SIG).
+// Grupo Iter - BU Caracol - evento compra-site-sucesso (SIG).
 //
 // Contexto: action de custom code em um workflow cujo trigger é webhook. A
 // chave de inscrição é o e-mail. O evento atualiza o CONTATO inscrito no
-// workflow e faz UPSERT de um DEAL associado.
+// workflow e faz UPSERT de um DEAL associado (chave única = booking).
 //
 // O contato é identificado por event.object.objectId. O deal é resolvido pela
-// propriedade `booking` (que recebe o cf_id_pedido); quando não existe, é
-// criado no pipeline 927835212, estágio 1422040488. A associação contato->deal
-// é feita após resolver/gravar os dois registros.
+// propriedade `booking` (que recebe o cf_id_pedido); quando não existe, é criado
+// no pipeline 927835212 (Venda de Bilhete), estágio 1422040488 (Venda realizada).
+// A associação contato->deal é feita após gravar os dois registros.
 //
-// O token de autenticação vem da secret HUBSPOT_TOKEN_INTEGRACAO_SIG, nunca
-// hardcoded.
+// Cada unidade de negócio tem uma brand: a propriedade
+// hs_all_assigned_business_unit_ids recebe o id da BU Caracol (4554143) tanto no
+// contato quanto no deal.
+//
+// Regras de conversão específicas deste evento:
+//   - cf_accept_communication: Sim/SIM/1/true -> true; qualquer outro -> false.
+//   - cf_language: BR/pt/pt-br -> "portugues"; EN/en -> "ingles"; ES/es ->
+//     "espanhol" (no deal, dropdown "idioma"). Desconhecido não é gravado.
+//   - cf_product: array -> JSON string na propriedade cf_produto.
+//   - cf_data_pedido e cf_date_visit_expected: DD-MM-YYYY -> YYYY-MM-DD.
+//
+// O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG, nunca hardcoded.
 // ---------------------------------------------------------------------------
 
 const PIPELINE_ID = "927835212";
 const PIPELINE_STAGE_ID = "1422040488";
+const BUSINESS_UNIT_ID = "4554143";
 
-// Mapeamento por destino (contato e deal). Cada entrada aponta a propriedade de
-// origem, a propriedade de destino, o tipo de conversão e (para depender de
-// fallback) a fonte alternativa.
 const CONTACT_FIELDS = [
   { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
   { from: "traffic_medium", to: "utm_medium", type: "text" },
@@ -33,11 +41,11 @@ const CONTACT_FIELDS = [
   { from: "country", to: "country", type: "text" },
   { from: "mobile_phone", to: "phone", type: "text" },
   { from: "cf_valor_pedido", to: "cf_valor_pedido", type: "number" },
-  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_category", to: "cf_category", type: "text" },
-  { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "checkbox" },
-  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
+  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date" },
   { from: "cf_language", to: "cf_language", type: "text" },
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "json" },
@@ -54,26 +62,24 @@ const DEAL_FIELDS = [
   { from: "country", to: "country", type: "text" },
   { from: "mobile_phone", to: "phone", type: "text" },
   { from: "cf_valor_pedido", to: "amount", type: "number" },
-  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_category", to: "cf_category", type: "text" },
-  { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "checkbox" },
-  { from: "cf_date_visit_expected", to: "data_da_visita", type: "date", dateFormat: "DD-MM-YYYY" },
-  { from: "cf_language", to: "lingua", type: "text" },
+  { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
+  { from: "cf_date_visit_expected", to: "data_da_visita", type: "date" },
+  { from: "cf_language", to: "idioma", type: "idioma" },
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "json" },
 ];
 
-const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
+const TRUE_WORDS = new Set(["true", "sim", "s", "y", "yes", "1"]);
 
-// Converte SIM/NÃO (e variações) em booleano. Valores que indicam negação viram
-// false; qualquer outro valor preenchido vira true. Vazio/nulo não é gravado.
-const toBoolean = (valor) => {
+const toAcceptance = (valor) => {
   if (typeof valor === "boolean") return valor;
   if (valor == null || valor === "") return null;
   const normalizedValue = String(valor).trim().toLowerCase();
-  if (FALSE_WORDS.has(normalizedValue)) return false;
-  return true;
+  if (TRUE_WORDS.has(normalizedValue)) return true;
+  return false;
 };
 
 const toNumber = (valor) => {
@@ -82,38 +88,45 @@ const toNumber = (valor) => {
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
-const padNumber = (number) => String(number).padStart(2, "0");
-
-// Extrai dia, mês e ano de uma data no formato DD-MM-YYYY (hífen).
-const parseDateComponents = (raw) => {
-  const dateMatch = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
-  if (!dateMatch) return null;
-  const day = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const year = Number(dateMatch[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return { day, month, year };
-};
-
-// Converte uma data local DD-MM-YYYY para YYYY-MM-DD.
-const toDateString = (raw) => {
-  const components = parseDateComponents(raw);
-  if (!components) return null;
-  const { day, month, year } = components;
-  return `${year}-${padNumber(month)}-${padNumber(day)}`;
-};
-
-// Serializa um valor estruturado para JSON. Quando o valor já é uma string
-// (cenário real: o input field entrega cf_product como string JSON pronta), a
-// string é gravada como está; quando é array/objeto, é serializada.
 const toJsonString = (valor) => {
   if (valor == null || valor === "") return null;
   if (typeof valor === "string") return valor;
   return JSON.stringify(valor);
 };
 
-// Aplica a conversão de tipo para um campo, respeitando fallbackFrom quando o
-// valor principal estiver vazio.
+// cf_language -> idioma (dropdown ingles/portugues/espanhol). Desconhecido ou
+// vazio retorna null (não grava).
+const toIdioma = (valor) => {
+  if (valor == null || valor === "") return null;
+  const normalizedValue = String(valor)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (["br", "pt", "pt-br", "ptbr", "portugues", "portuguese"].includes(normalizedValue)) {
+    return "portugues";
+  }
+  if (["en", "en-us", "ingles", "english"].includes(normalizedValue)) {
+    return "ingles";
+  }
+  if (["es", "espanhol", "spanish"].includes(normalizedValue)) {
+    return "espanhol";
+  }
+  return null;
+};
+
+const padNumber = (number) => String(number).padStart(2, "0");
+
+const toDateString = (raw) => {
+  const match = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${year}-${padNumber(month)}-${padNumber(day)}`;
+};
+
 const convertField = (field, payload) => {
   let valor = payload[field.from];
   if ((valor == null || valor === "") && field.fallbackFrom) {
@@ -121,27 +134,28 @@ const convertField = (field, payload) => {
   }
 
   switch (field.type) {
-    case "checkbox":
-      return toBoolean(valor);
+    case "acceptance":
+      return toAcceptance(valor);
     case "number":
       return toNumber(valor);
-    case "date":
-      return toDateString(valor);
     case "json":
       return toJsonString(valor);
+    case "idioma":
+      return toIdioma(valor);
+    case "date":
+      return toDateString(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
 };
 
-// Monta o objeto de propriedades a partir de uma lista de campos, aplicando as
-// conversões e ignorando campos vazios.
 const buildProperties = (fields, payload) => {
   const properties = {};
   for (const field of fields) {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
+  properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
   return properties;
 };
 
@@ -157,10 +171,8 @@ exports.main = async (event, callback) => {
       },
     });
 
-  // Propriedades do webhook expostas como input fields.
   const payload = event.inputFields || {};
 
-  // O contato inscrito no workflow já está resolvido.
   const contactId = String(event.object?.objectId || "");
   if (!contactId) {
     return respond({ erro: "Record id do contato ausente no evento (event.object.objectId)." });
@@ -172,13 +184,13 @@ exports.main = async (event, callback) => {
   }
 
   console.log(
-    `[compraSiteSucesso] contato ${contactId} | booking ${bookingKey}`,
+    `[caracolCompraSiteSucesso] contato ${contactId} | booking ${bookingKey}`,
   );
 
   const hubspotClient = axios.create({
     baseURL: "https://api.hubapi.com",
     headers: {
-      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_INTEGRACAO_SIG}`,
+      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG}`,
       "Content-Type": "application/json",
     },
     timeout: 18000,
@@ -188,14 +200,12 @@ exports.main = async (event, callback) => {
   const dealProperties = buildProperties(DEAL_FIELDS, payload);
 
   try {
-    // 1. Atualiza o contato.
     await withStep("atualizarContato", () =>
       hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
         properties: contactProperties,
       }),
     );
 
-    // 2. Resolve o deal pela propriedade booking.
     const dealId = await withStep("resolverDeal", () =>
       findDealByBooking(bookingKey, hubspotClient),
     );
@@ -214,13 +224,12 @@ exports.main = async (event, callback) => {
       );
     }
 
-    // 3. Garante a associação contato -> deal.
     await withStep("associarContatoDeal", () =>
       associateContactDeal(contactId, resolvedDealId, hubspotClient),
     );
 
     console.log(
-      `[compraSiteSucesso] contato ${contactId} atualizado; deal ${resolvedDealId}`,
+      `[caracolCompraSiteSucesso] contato ${contactId} atualizado; deal ${resolvedDealId}`,
     );
 
     return respond({
@@ -230,7 +239,7 @@ exports.main = async (event, callback) => {
     });
   } catch (error) {
     const message = buildErrorMessage(error);
-    console.error("[compraSiteSucesso] error:", message);
+    console.error("[caracolCompraSiteSucesso] error:", message);
     return respond({ erro: message });
   }
 };
