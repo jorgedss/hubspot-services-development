@@ -172,7 +172,7 @@ exports.main = async (event, callback) => {
 
   const contactId = String(event.object?.objectId || "");
   if (!contactId) {
-    return respond({ erro: "Record id do contato ausente no evento (event.object.objectId)." });
+    throw new Error("Record id do contato ausente no evento (event.object.objectId).");
   }
 
   console.log(`[bondinhoCarrinhoAbandonado] contato ${contactId}`);
@@ -224,9 +224,8 @@ exports.main = async (event, callback) => {
       deal_id: resolvedDealId,
     });
   } catch (error) {
-    const message = buildErrorMessage(error);
-    console.error("[bondinhoCarrinhoAbandonado] error:", message);
-    return respond({ erro: message });
+    console.error("[bondinhoCarrinhoAbandonado] error:", buildErrorMessage(error));
+    throw error;
   }
 };
 

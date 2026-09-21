@@ -176,7 +176,7 @@ exports.main = async (event, callback) => {
   const contactId = String(event.object?.objectId || "");
 
   if (!contactId) {
-    return respond({ erro: "Record id do contato ausente no evento (event.object.objectId)." });
+    throw new Error("Record id do contato ausente no evento (event.object.objectId).");
   }
 
   console.log(`[caracolAddToCart] processando contato ${contactId}`);
@@ -204,7 +204,7 @@ exports.main = async (event, callback) => {
   properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
 
   if (!Object.keys(properties).length) {
-    return respond({ erro: "Nenhuma propriedade a mapear no payload." });
+    throw new Error("Nenhuma propriedade a mapear no payload.");
   }
 
   try {
@@ -224,9 +224,8 @@ exports.main = async (event, callback) => {
       propriedades_gravadas: Object.keys(properties).length,
     });
   } catch (error) {
-    const message = buildErrorMessage(error);
-    console.error("[caracolAddToCart] error:", message);
-    return respond({ erro: message });
+    console.error("[caracolAddToCart] error:", buildErrorMessage(error));
+    throw error;
   }
 };
 

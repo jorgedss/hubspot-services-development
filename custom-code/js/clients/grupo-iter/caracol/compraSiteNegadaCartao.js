@@ -177,12 +177,12 @@ exports.main = async (event, callback) => {
 
   const contactId = String(event.object?.objectId || "");
   if (!contactId) {
-    return respond({ erro: "Record id do contato ausente no evento (event.object.objectId)." });
+    throw new Error("Record id do contato ausente no evento (event.object.objectId).");
   }
 
   const bookingKey = String(payload.cf_id_pedido || "").trim();
   if (!bookingKey) {
-    return respond({ erro: "Campo cf_id_pedido ausente ou vazio no payload. NÃ£o Ã© possÃ­vel resolver o deal." });
+    throw new Error("Campo cf_id_pedido ausente ou vazio no payload. Não é possível resolver o deal.");
   }
 
   console.log(
@@ -248,9 +248,8 @@ exports.main = async (event, callback) => {
       deal_id: resolvedDealId,
     });
   } catch (error) {
-    const message = buildErrorMessage(error);
-    console.error("[caracolCompraSiteNegadaCartao] error:", message);
-    return respond({ erro: message });
+    console.error("[caracolCompraSiteNegadaCartao] error:", buildErrorMessage(error));
+    throw error;
   }
 };
 
