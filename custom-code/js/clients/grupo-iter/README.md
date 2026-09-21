@@ -16,9 +16,10 @@ Token de autenticação: cada portal (produção ou sandbox) expõe a secret com
 ```
 custom-code/js/clients/grupo-iter/
 ├── caracol/
-│   ├── formSubmit.js          # evento form-submit
-│   ├── compraSiteSucesso.js   # evento compra-site-sucesso
-│   └── addToCart.js           # evento add-to-cart
+│   ├── formSubmit.js              # evento form-submit
+│   ├── compraSiteSucesso.js       # evento compra-site-sucesso
+│   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
+│   └── addToCart.js               # evento add-to-cart
 ├── bondinho/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
 │   ├── compraSiteSucessoSocio.js     # evento compra-site-sucesso-socio
@@ -57,3 +58,4 @@ Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554143`.
 | add-to-cart | `caracol/addToCart.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/wZRkIhE` |
 | form-submit | `caracol/formSubmit.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/PeQLl8a` |
 | compra-site-sucesso | `caracol/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/RM4uojm` |
+| compra-site-negada-antifraude | `caracol/compraSiteNegadaAntifraude.js` | sandbox | _(a preencher após cadastro)_ |
