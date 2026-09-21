@@ -1,25 +1,28 @@
-const axios = require("axios");
+﻿const axios = require("axios");
 
 // ---------------------------------------------------------------------------
-// Grupo Iter - form-submit (SIG).
+// Grupo Iter - BU Caracol - evento form-submit (SIG).
 //
-// Contexto: action de custom code dentro de um workflow cujo trigger é um
-// webhook. A chave de inscriçao do workflow é o e-mail. O payload é o corpo do
-// evento recebido pelo webhook (formato SIG) e este script mapeia cada campo
-// para a propriedade do contato na HubSpot, aplicando as conversões de tipo.
+// Contexto: action de custom code dentro de um workflow cujo trigger Ã© um
+// webhook. A chave de inscriÃ§ao do workflow Ã© o e-mail. O evento cria/atualiza
+// o CONTATO inscrito no workflow, aplicando as conversÃµes de tipo.
 //
-// O contato inscrito no workflow já fornece o record id em event.object.objectId
-// e é atualizado via PATCH na API v3 de contacts. O token de autenticacao vem da
-// secret `HUBSPOT_TOKEN_INTEGRACAO_SIG`, nunca hardcoded.
+// O contato inscrito no workflow jÃ¡ fornece o record id em event.object.objectId
+// e Ã© atualizado via PATCH na API v3 de contacts. Cada unidade de negÃ³cio tem
+// uma brand: a propriedade hs_all_assigned_business_unit_ids recebe o id da BU
+// Caracol (4554143). O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
+// nunca hardcoded.
 // ---------------------------------------------------------------------------
 
-// As datas "data e hora" do payload vêm em horário local do cliente
-// (America/Sao_Paulo, offset fixo -03:00, sem horário de verão desde 2019) e
-// são convertidas para timestamp UTC na função toDateTimeMs. As datas "só data"
-// são normalizadas para YYYY-MM-DD sem deslocamento de fuso.
+const BUSINESS_UNIT_ID = "4554143";
 
-// Mapeamento (payload -> propriedade do contato na HubSpot) com a conversão de
-// tipo correspondente. Campos que no payload são strings numéricas/bool são
+// As datas "data e hora" do payload vÃªm em horÃ¡rio local do cliente
+// (America/Sao_Paulo, offset fixo -03:00, sem horÃ¡rio de verÃ£o desde 2019) e
+// sÃ£o convertidas para timestamp UTC na funÃ§Ã£o toDateTimeMs. As datas "sÃ³ data"
+// sÃ£o normalizadas para YYYY-MM-DD sem deslocamento de fuso.
+
+// Mapeamento (payload -> propriedade do contato na HubSpot) com a conversÃ£o de
+// tipo correspondente. Campos que no payload sÃ£o strings numÃ©ricas/bool sÃ£o
 // convertidos antes de gravar.
 const FIELD_MAP = [
   { from: "traffic_medium", to: "utm_medium", type: "text" },
@@ -56,7 +59,7 @@ const FIELD_MAP = [
   { from: "cf_nome_produto", to: "cf_nome_produto", type: "text" },
 ];
 
-const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
+const FALSE_WORDS = new Set(["false", "0", "nao", "nÃ£o"]);
 
 const toBoolean = (valor) => {
   if (typeof valor === "boolean") return valor;
@@ -66,7 +69,7 @@ const toBoolean = (valor) => {
   return true;
 };
 
-// Aceite (SIM/NÃO, Sim/Nao) vira checkbox. Sem valor, não grava nada.
+// Aceite (SIM/NÃƒO, Sim/Nao) vira checkbox. Sem valor, nÃ£o grava nada.
 const toAckBoolean = (valor) => {
   if (valor == null || valor === "") return null;
   return toBoolean(valor);
@@ -80,9 +83,9 @@ const toNumber = (valor) => {
 
 const padNumber = (number) => String(number).padStart(2, "0");
 
-// Extrai mês, dia e ano de uma data "DD/MM/YYYY" ou "MM/DD/YYYY", conforme o
-// formato explicitado em dateFormat. Retorna null quando a data é ilegível ou
-// os componentes são inválidos.
+// Extrai mÃªs, dia e ano de uma data "DD/MM/YYYY" ou "MM/DD/YYYY", conforme o
+// formato explicitado em dateFormat. Retorna null quando a data Ã© ilegÃ­vel ou
+// os componentes sÃ£o invÃ¡lidos.
 const parseDateComponents = (raw, dateFormat) => {
   const dateMatch = /^\s*(\d{2})\/(\d{2})\/(\d{4})/.exec(String(raw || ""));
   if (!dateMatch) return null;
@@ -98,8 +101,8 @@ const parseDateComponents = (raw, dateFormat) => {
   return { month, day, year };
 };
 
-// Converte uma data local (só dia) para a string YYYY-MM-DD, sem deslocar o dia
-// por fuso: usa os componentes numéricos do payload diretamente.
+// Converte uma data local (sÃ³ dia) para a string YYYY-MM-DD, sem deslocar o dia
+// por fuso: usa os componentes numÃ©ricos do payload diretamente.
 const toDateString = (raw, dateFormat) => {
   const components = parseDateComponents(raw, dateFormat);
   if (!components) return null;
@@ -107,10 +110,10 @@ const toDateString = (raw, dateFormat) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
-// Combina uma data com um horário "HH:mm:ss" (ambos em horário local do
+// Combina uma data com um horÃ¡rio "HH:mm:ss" (ambos em horÃ¡rio local do
 // cliente) e devolve timestamp em milissegundos (UTC), o formato que a HubSpot
 // aceita para propriedades "date and time". Retorna null se a data estiver
-// ausente/ilegível.
+// ausente/ilegÃ­vel.
 const toDateTimeMs = (rawDate, rawTime, dateFormat) => {
   const components = parseDateComponents(rawDate, dateFormat);
   if (!components) return null;
@@ -125,12 +128,12 @@ const toDateTimeMs = (rawDate, rawTime, dateFormat) => {
 
   if (hour > 23 || minute > 59 || second > 59) return null;
 
-  // Date.UTC recebe os componentes já tratados como local do cliente; o offset
-  // fixo -03:00 é somado para cima para obter o instante UTC equivalente.
+  // Date.UTC recebe os componentes jÃ¡ tratados como local do cliente; o offset
+  // fixo -03:00 Ã© somado para cima para obter o instante UTC equivalente.
   return Date.UTC(year, month - 1, day, hour, minute, second) + 3 * 60 * 60 * 1000;
 };
 
-// Aplica a conversão de tipo para um campo simples (não-datetime).
+// Aplica a conversÃ£o de tipo para um campo simples (nÃ£o-datetime).
 const convert = (field, valor) => {
   switch (field.type) {
     case "checkbox":
@@ -146,7 +149,7 @@ const convert = (field, valor) => {
   }
 };
 
-// Conversão específica para datetime, que precisa do campo de horário e do
+// ConversÃ£o especÃ­fica para datetime, que precisa do campo de horÃ¡rio e do
 // formato de data.
 const convertDateTime = (field, dateVal, timeVal) =>
   toDateTimeMs(dateVal, timeVal, field.dateFormat);
@@ -163,11 +166,11 @@ exports.main = async (event, callback) => {
       },
     });
 
-  // As propriedades recebidas do webhook são expostas como input fields do
+  // As propriedades recebidas do webhook sÃ£o expostas como input fields do
   // workflow e chegam em event.inputFields.
   const payload = event.inputFields || {};
 
-  // O contato inscrito no workflow já está resolvido; o record id vem direto do
+  // O contato inscrito no workflow jÃ¡ estÃ¡ resolvido; o record id vem direto do
   // evento, sem necessidade de busca por e-mail.
   const contactId = String(event.object?.objectId || "");
 
@@ -175,19 +178,19 @@ exports.main = async (event, callback) => {
     return respond({ erro: "Record id do contato ausente no evento (event.object.objectId)." });
   }
 
-  console.log(`[atualizarContatoSIG] processando contato ${contactId}`);
+  console.log(`[caracolFormSubmit] processando contato ${contactId}`);
 
   const hubspotClient = axios.create({
     baseURL: "https://api.hubapi.com",
     headers: {
-      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_INTEGRACAO_SIG}`,
+      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG}`,
       "Content-Type": "application/json",
     },
     timeout: 18000,
   });
 
-  // Monta o objeto de propriedades a gravar, aplicando as conversões de tipo e
-  // ignorando campos vazios (não gravar null evita sobrescrever valor já
+  // Monta o objeto de propriedades a gravar, aplicando as conversÃµes de tipo e
+  // ignorando campos vazios (nÃ£o gravar null evita sobrescrever valor jÃ¡
   // existente no contato).
   const properties = {};
   for (const field of FIELD_MAP) {
@@ -197,6 +200,7 @@ exports.main = async (event, callback) => {
         : convert(field, payload[field.from]);
     if (converted != null) properties[field.to] = converted;
   }
+  properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
 
   if (!Object.keys(properties).length) {
     return respond({ erro: "Nenhuma propriedade a mapear no payload." });
@@ -210,7 +214,7 @@ exports.main = async (event, callback) => {
     );
 
     console.log(
-      `[atualizarContatoSIG] contato ${contactId} atualizado com ${Object.keys(properties).length} propriedades`,
+      `[caracolFormSubmit] contato ${contactId} atualizado com ${Object.keys(properties).length} propriedades`,
     );
 
     return respond({
@@ -220,7 +224,7 @@ exports.main = async (event, callback) => {
     });
   } catch (error) {
     const message = buildErrorMessage(error);
-    console.error("[atualizarContatoSIG] error:", message);
+    console.error("[caracolFormSubmit] error:", message);
     return respond({ erro: message });
   }
 };
