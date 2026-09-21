@@ -29,7 +29,7 @@
 
 const PIPELINE_ID = "927835212";
 const PIPELINE_STAGE_ID = "1422054714";
-const LOSS_REASON = "Pagamento recusado (cartÃ£o)";
+const LOSS_REASON = "Pagamento recusado (cartão)";
 const BUSINESS_UNIT_ID = "4554143";
 
 const CONTACT_FIELDS = [
