@@ -32,7 +32,7 @@ const axios = require("axios");
 
 const PIPELINE_ID = "927835212";
 const PIPELINE_STAGE_ID = "1422054714";
-const LOSS_REASON = "Pagamento recusado";
+const LOSS_REASON = "Pagamento recusado (antifraude)";
 const BUSINESS_UNIT_ID = "4554145";
 
 const CONTACT_FIELDS = [
@@ -79,7 +79,7 @@ const DEAL_FIELDS = [
   { from: "cf_category", to: "cf_category", type: "text" },
   { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
   { from: "cf_date_visit_expected", to: "data_da_visita", type: "dateTimeVisita" },
-  { from: "cf_lingua", to: "lingua", type: "text" },
+  { from: "cf_lingua", to: "idioma", type: "idioma" },
   { from: "cf_product", to: "cf_produto", type: "text" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_crianca", to: "cf_crianca", type: "childFlag" },
@@ -185,6 +185,27 @@ const toDateTimeDate = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
+// cf_lingua -> idioma (dropdown ingles/portugues/espanhol). Desconhecido ou
+// vazio retorna null (não grava).
+const toIdioma = (valor) => {
+  if (valor == null || valor === "") return null;
+  const normalizedValue = String(valor)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (["br", "pt", "pt-br", "ptbr", "portugues", "portuguese"].includes(normalizedValue)) {
+    return "portugues";
+  }
+  if (["en", "en-us", "ingles", "english"].includes(normalizedValue)) {
+    return "ingles";
+  }
+  if (["es", "espanhol", "spanish"].includes(normalizedValue)) {
+    return "espanhol";
+  }
+  return null;
+};
+
 const convertField = (field, payload) => {
   let valor = payload[field.from];
   if ((valor == null || valor === "") && field.fallbackFrom) {
@@ -202,6 +223,8 @@ const convertField = (field, payload) => {
       return toChildFlag(valor);
     case "number":
       return toNumber(valor);
+    case "idioma":
+      return toIdioma(valor);
     case "date":
       return toDateString(valor);
     case "datetime":

@@ -69,7 +69,7 @@ const DEAL_FIELDS = [
   { from: "cf_produto", to: "cf_produto", type: "text" },
   { from: "cf_order_payment_amount", to: "amount", type: "number" },
   { from: "cf_category", to: "cf_category", type: "text" },
-  { from: "cf_lingua", to: "lingua", type: "text" },
+  { from: "cf_lingua", to: "idioma", type: "idioma" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
 ];
 
@@ -105,6 +105,27 @@ const toDateVisitString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
+// cf_lingua -> idioma (dropdown ingles/portugues/espanhol). Desconhecido ou
+// vazio retorna null (não grava).
+const toIdioma = (valor) => {
+  if (valor == null || valor === "") return null;
+  const normalizedValue = String(valor)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (["br", "pt", "pt-br", "ptbr", "portugues", "portuguese"].includes(normalizedValue)) {
+    return "portugues";
+  }
+  if (["en", "en-us", "ingles", "english"].includes(normalizedValue)) {
+    return "ingles";
+  }
+  if (["es", "espanhol", "spanish"].includes(normalizedValue)) {
+    return "espanhol";
+  }
+  return null;
+};
+
 const convertField = (field, payload) => {
   let valor = payload[field.from];
   if ((valor == null || valor === "") && field.fallbackFrom) {
@@ -118,6 +139,8 @@ const convertField = (field, payload) => {
       return toDateString(valor);
     case "dateVisit":
       return toDateVisitString(valor);
+    case "idioma":
+      return toIdioma(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
