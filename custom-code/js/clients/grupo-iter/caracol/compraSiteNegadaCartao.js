@@ -3,24 +3,24 @@
 // ---------------------------------------------------------------------------
 // Grupo Iter - BU Caracol - evento compra-site-negada-cartao (SIG).
 //
-// Contexto: action de custom code em um workflow cujo trigger Ã© webhook. A
-// chave de inscriÃ§Ã£o Ã© o e-mail. O evento atualiza o CONTATO inscrito no
-// workflow e faz UPSERT de um DEAL associado (chave Ãºnica = booking), criando-o
-// na etapa Perdido com motivo_de_perda "Pagamento recusado (cartÃ£o)".
+// Contexto: action de custom code em um workflow cujo trigger é webhook. A
+// chave de inscrição é o e-mail. O evento atualiza o CONTATO inscrito no
+// workflow e faz UPSERT de um DEAL associado (chave única = booking), criando-o
+// na etapa Perdido com motivo_de_perda "Pagamento recusado (cartão)".
 //
-// O contato Ã© identificado por event.object.objectId. O deal Ã© resolvido pela
-// propriedade `booking` (que recebe o cf_id_pedido); quando nÃ£o existe, Ã© criado
-// no pipeline 927835212 (Venda de Bilhete), estÃ¡gio 1422054714 (Perdido). A
-// associaÃ§Ã£o contato->deal Ã© feita apÃ³s gravar os dois registros.
+// O contato é identificado por event.object.objectId. O deal é resolvido pela
+// propriedade `booking` (que recebe o cf_id_pedido); quando não existe, é criado
+// no pipeline 927835212 (Venda de Bilhete), estágio 1422054714 (Perdido). A
+// associação contato->deal é feita após gravar os dois registros.
 //
-// Cada unidade de negÃ³cio tem uma brand: a propriedade
+// Cada unidade de negócio tem uma brand: a propriedade
 // hs_all_assigned_business_unit_ids recebe o id da BU Caracol (4554143) tanto no
 // contato quanto no deal.
 //
-// Regras de conversÃ£o especÃ­ficas deste evento:
+// Regras de conversão específicas deste evento:
 //   - cf_accept_communication: Sim/SIM/1/true -> true; qualquer outro -> false.
 //   - cf_language: BR/pt/pt-br -> "portugues"; EN/en -> "ingles"; ES/es ->
-//     "espanhol" (no deal, dropdown "idioma"). Desconhecido nÃ£o Ã© gravado.
+//     "espanhol" (no deal, dropdown "idioma"). Desconhecido não é gravado.
 //   - cf_product: array -> JSON string na propriedade cf_produto.
 //   - cf_data_pedido e cf_date_visit_expected: DD-MM-YYYY -> YYYY-MM-DD.
 //
@@ -97,7 +97,7 @@ const toJsonString = (valor) => {
 };
 
 // cf_language -> idioma (dropdown ingles/portugues/espanhol). Desconhecido ou
-// vazio retorna null (nÃ£o grava).
+// vazio retorna null (não grava).
 const toIdioma = (valor) => {
   if (valor == null || valor === "") return null;
   const normalizedValue = String(valor)

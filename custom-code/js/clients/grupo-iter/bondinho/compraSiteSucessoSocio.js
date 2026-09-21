@@ -3,29 +3,29 @@
 // ---------------------------------------------------------------------------
 // Grupo Iter - BU Bondinho - evento compra-site-sucesso-socio (SIG).
 //
-// Contexto: action de custom code em um workflow cujo trigger Ã© webhook. A
-// chave de inscriÃ§Ã£o Ã© o e-mail. O evento atualiza o CONTATO inscrito no
-// workflow e faz UPSERT de um DEAL associado, com os campos extras do sÃ³cio
-// (responsÃ¡vel legal).
+// Contexto: action de custom code em um workflow cujo trigger é webhook. A
+// chave de inscrição é o e-mail. O evento atualiza o CONTATO inscrito no
+// workflow e faz UPSERT de um DEAL associado, com os campos extras do sócio
+// (responsável legal).
 //
-// O contato Ã© identificado por event.object.objectId. O deal Ã© resolvido pela
-// propriedade `booking` (que recebe o cf_id_pedido); quando nÃ£o existe, Ã©
-// criado no pipeline 927835212 (Venda de Bilhete), estÃ¡gio 1422040488 (Venda
-// realizada). A associaÃ§Ã£o contato->deal Ã© feita apÃ³s resolver/gravar os dois
+// O contato é identificado por event.object.objectId. O deal é resolvido pela
+// propriedade `booking` (que recebe o cf_id_pedido); quando não existe, é
+// criado no pipeline 927835212 (Venda de Bilhete), estágio 1422040488 (Venda
+// realizada). A associação contato->deal é feita após resolver/gravar os dois
 // registros.
 //
-// Cada unidade de negÃ³cio tem uma brand: a propriedade
+// Cada unidade de negócio tem uma brand: a propriedade
 // hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
 // no contato quanto no deal.
 //
-// Regras de conversÃ£o especÃ­ficas deste evento:
-//   - cf_typepayments: "3"/"CartÃ£o" -> "CartÃ£o"; qualquer outro valor -> "Pix".
+// Regras de conversão específicas deste evento:
+//   - cf_typepayments: "3"/"Cartão" -> "Cartão"; qualquer outro valor -> "Pix".
 //   - cf_accept_communication: Sim/SIM/1/true -> true; qualquer outro -> false.
-//   - cf_socio: true/sim/1 -> true; false/nÃ£o/0 -> false (dropdown true/false).
-//   - cf_crianca/cf_comprou_crianca: true/SIM/1/nÃºmero>0 -> true; resto -> false.
+//   - cf_socio: true/sim/1 -> true; false/não/0 -> false (dropdown true/false).
+//   - cf_crianca/cf_comprou_crianca: true/SIM/1/número>0 -> true; resto -> false.
 //   - cf_data_pedido e cf_date_visit_expected: DD-MM-YYYY -> YYYY-MM-DD.
 //
-// O token de autenticaÃ§Ã£o vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
+// O token de autenticação vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
 // nunca hardcoded.
 // ---------------------------------------------------------------------------
 
@@ -91,11 +91,11 @@ const DEAL_FIELDS = [
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
 ];
 
-const FALSE_WORDS = new Set(["false", "0", "nao", "nÃ£o"]);
+const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
 const TRUE_WORDS = new Set(["true", "sim", "s", "y", "yes", "1"]);
 
-// Aceites: trata Sim/SIM/1/true como true; qualquer outro valor preenchido Ã©
-// false (a regra do evento Ã© "1 = Sim, demais = NÃ£o").
+// Aceites: trata Sim/SIM/1/true como true; qualquer outro valor preenchido é
+// false (a regra do evento é "1 = Sim, demais = Não").
 const toAcceptance = (valor) => {
   if (typeof valor === "boolean") return valor;
   if (valor == null || valor === "") return null;
@@ -104,7 +104,7 @@ const toAcceptance = (valor) => {
   return false;
 };
 
-// Dropdown true/false (cf_socio): true/sim/1 -> true; false/nÃ£o/0 -> false.
+// Dropdown true/false (cf_socio): true/sim/1 -> true; false/não/0 -> false.
 const toBooleanDropdown = (valor) => {
   if (typeof valor === "boolean") return valor;
   if (valor == null || valor === "") return null;
@@ -114,7 +114,7 @@ const toBooleanDropdown = (valor) => {
   return null;
 };
 
-// cf_typepayments: "3" -> "CartÃ£o"; "CartÃ£o"/"Cartao" -> "CartÃ£o"; qualquer
+// cf_typepayments: "3" -> "Cartão"; "Cartão"/"Cartao" -> "Cartão"; qualquer
 // outro valor (incluindo "Pix") -> "Pix".
 const toPayments = (valor) => {
   if (valor == null || valor === "") return null;
@@ -123,11 +123,11 @@ const toPayments = (valor) => {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (normalizedValue === "3" || normalizedValue === "cartao") return "CartÃ£o";
+  if (normalizedValue === "3" || normalizedValue === "cartao") return "Cartão";
   return "Pix";
 };
 
-// cf_crianca/cf_comprou_crianca: aceita booleano, "SIM"/"1"/nÃºmero>0 -> true;
+// cf_crianca/cf_comprou_crianca: aceita booleano, "SIM"/"1"/número>0 -> true;
 // o resto -> false.
 const toChildFlag = (valor) => {
   if (typeof valor === "boolean") return valor;
@@ -216,7 +216,7 @@ const buildProperties = (fields, payload) => {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
-  // A brand da unidade de negÃ³cio Ã© obrigatÃ³ria em contato e deal.
+  // A brand da unidade de negócio é obrigatória em contato e deal.
   properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
   return properties;
 };
@@ -288,7 +288,7 @@ exports.main = async (event, callback) => {
       );
     }
 
-    // 3. Garante a associaÃ§Ã£o contato -> deal.
+    // 3. Garante a associação contato -> deal.
     await withStep("associarContatoDeal", () =>
       associateContactDeal(contactId, resolvedDealId, hubspotClient),
     );
