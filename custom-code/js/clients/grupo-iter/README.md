@@ -19,6 +19,7 @@ custom-code/js/clients/grupo-iter/
 │   ├── formSubmit.js              # evento form-submit
 │   ├── compraSiteSucesso.js       # evento compra-site-sucesso
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
+│   ├── compraSiteNegadaCartao.js # evento compra-site-negada-cartao
 │   └── addToCart.js               # evento add-to-cart
 ├── bondinho/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
@@ -59,3 +60,4 @@ Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554143`.
 | form-submit | `caracol/formSubmit.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/PeQLl8a` |
 | compra-site-sucesso | `caracol/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/RM4uojm` |
 | compra-site-negada-antifraude | `caracol/compraSiteNegadaAntifraude.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/ehvfyMw` |
+| compra-site-negada-cartao | `caracol/compraSiteNegadaCartao.js` | sandbox | _(a preencher após cadastro)_ |
