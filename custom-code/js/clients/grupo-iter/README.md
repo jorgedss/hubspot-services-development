@@ -55,5 +55,5 @@ Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554143`.
 | Evento | Script | Conta | Endpoint / link de cadastro |
 |---|---|---|---|
 | add-to-cart | `caracol/addToCart.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/wZRkIhE` |
-| form-submit | `caracol/formSubmit.js` | sandbox | _(a preencher após cadastro)_ |
+| form-submit | `caracol/formSubmit.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/PeQLl8a` |
 | compra-site-sucesso | `caracol/compraSiteSucesso.js` | _(a definir)_ | _(a preencher após cadastro)_ |
