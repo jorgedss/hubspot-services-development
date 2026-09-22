@@ -3,15 +3,13 @@ const axios = require("axios");
 // ---------------------------------------------------------------------------
 // Grupo Iter - BU Bondinho - evento reagendamento (SIG).
 //
-// Contexto: action de custom code em um workflow cujo trigger é webhook. A
-// chave de inscrição é o e-mail. O evento apenas atualiza o CONTATO inscrito no
-// workflow e o DEAL associado (chave única = booking) com as informações do
-// reagendamento. Não move o estágio do deal.
+// Contexto: action de custom code em um workflow cujo trigger é webhook. O
+// evento apenas atualiza o DEAL inscrito no workflow (event.object.objectId é o
+// id do deal) e o CONTATO associado (resolvido pelo e-mail), com as informações
+// do reagendamento. Não move o estágio do deal.
 //
-// A automação só é executada quando já existe um deal com o booking informado;
-// portanto, se o deal não for encontrado, o script lança erro.
-//
-// O contato é identificado por event.object.objectId.
+// O contato é resolvido pelo e-mail via API search, e o deal vem pronto em
+// event.object.objectId.
 //
 // Cada unidade de negócio tem uma brand: a propriedade
 // hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
@@ -137,18 +135,19 @@ exports.main = async (event, callback) => {
 
   const payload = event.inputFields || {};
 
-  const contactId = String(event.object?.objectId || "");
-  if (!contactId) {
-    throw new Error("Record id do contato ausente no evento (event.object.objectId).");
+  // No reagendamento, o objeto inscrito no workflow é o DEAL, não o contato.
+  const dealId = String(event.object?.objectId || "");
+  if (!dealId) {
+    throw new Error("Record id do deal ausente no evento (event.object.objectId).");
   }
 
-  const bookingKey = String(payload.cf_id_pedido || "").trim();
-  if (!bookingKey) {
-    throw new Error("Campo cf_id_pedido ausente ou vazio no payload. Não é possível resolver o deal.");
+  const email = String(payload.email || "").trim().toLowerCase();
+  if (!email) {
+    throw new Error("Campo email ausente ou vazio no payload. Não é possível resolver o contato.");
   }
 
   console.log(
-    `[bondinhoReagendamento] contato ${contactId} | booking ${bookingKey}`,
+    `[bondinhoReagendamento] deal ${dealId} | email ${email}`,
   );
 
   const hubspotClient = axios.create({
@@ -164,18 +163,12 @@ exports.main = async (event, callback) => {
   const dealProperties = buildProperties(DEAL_FIELDS, payload);
 
   try {
-    await withStep("atualizarContato", () =>
-      hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
-        properties: contactProperties,
-      }),
+    const contactId = await withStep("resolverContato", () =>
+      findContactByEmail(email, hubspotClient),
     );
 
-    const dealId = await withStep("resolverDeal", () =>
-      findDealByBooking(bookingKey, hubspotClient),
-    );
-
-    if (!dealId) {
-      throw new Error(`Deal com booking ${bookingKey} não encontrado. O reagendamento só é aplicado a deals existentes.`);
+    if (!contactId) {
+      throw new Error(`Contato ${email} não encontrado no portal.`);
     }
 
     await withStep("atualizarDeal", () =>
@@ -184,12 +177,18 @@ exports.main = async (event, callback) => {
       }),
     );
 
+    await withStep("atualizarContato", () =>
+      hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
+        properties: contactProperties,
+      }),
+    );
+
     await withStep("associarContatoDeal", () =>
       associateContactDeal(contactId, dealId, hubspotClient),
     );
 
     console.log(
-      `[bondinhoReagendamento] contato ${contactId} atualizado; deal ${dealId} atualizado`,
+      `[bondinhoReagendamento] deal ${dealId} e contato ${contactId} atualizados`,
     );
 
     return respond({
@@ -205,16 +204,16 @@ exports.main = async (event, callback) => {
 
 // --- helpers de HubSpot -----------------------------------------------------
 
-const findDealByBooking = async (bookingKey, hubspotClient) => {
-  const { data } = await hubspotClient.post("/crm/v3/objects/deals/search", {
+const findContactByEmail = async (email, hubspotClient) => {
+  const { data } = await hubspotClient.post("/crm/v3/objects/contacts/search", {
     filterGroups: [
-      { filters: [{ propertyName: "booking", operator: "EQ", value: bookingKey }] },
+      { filters: [{ propertyName: "email", operator: "EQ", value: email }] },
     ],
-    properties: ["booking"],
+    properties: ["email"],
     limit: 1,
   });
-  const deal = (data.results || [])[0];
-  return deal ? deal.id : null;
+  const contact = (data.results || [])[0];
+  return contact ? contact.id : null;
 };
 
 const associateContactDeal = async (contactId, dealId, hubspotClient) => {
