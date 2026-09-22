@@ -27,6 +27,8 @@ custom-code/js/clients/grupo-iter/
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
 │   ├── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
 │   └── carrinhoAbandonado.js         # evento carrinho-abandonado
+├── c2rio/
+│   └── compraSiteSucesso.js          # evento compra-site-sucesso
 └── README.md
 ```
 
@@ -61,3 +63,13 @@ Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554143`.
 | compra-site-sucesso | `caracol/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/RM4uojm` |
 | compra-site-negada-antifraude | `caracol/compraSiteNegadaAntifraude.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/ehvfyMw` |
 | compra-site-negada-cartao | `caracol/compraSiteNegadaCartao.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/acv4ud2` |
+
+---
+
+## C2Rio
+
+Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554144`.
+
+| Evento | Script | Conta | Endpoint / link de cadastro |
+|---|---|---|---|
+| compra-site-sucesso | `c2rio/compraSiteSucesso.js` | sandbox | _(a preencher após cadastro)_ |
