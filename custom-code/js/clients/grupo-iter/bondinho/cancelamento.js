@@ -48,7 +48,7 @@ const CONTACT_FIELDS = [
   { from: "cf_motivo_cancelamento", to: "cf_motivo_cancelamento", type: "text" },
   { from: "cf_valor_reembolso", to: "cf_valor_reembolso", type: "number" },
   { from: "cf_quantity_cancelada", to: "cf_quantity_cancelada", type: "number" },
-  { from: "cf_quantity_restante", to: "cf_quantity_restante", type: "number" },
+  { from: "cf_quantity_restante", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_valor_restante", to: "cf_valor_pedido", type: "number" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
 ];
@@ -68,7 +68,7 @@ const DEAL_FIELDS = [
   { from: "cf_motivo_cancelamento", to: "cf_motivo_cancelamento", type: "text" },
   { from: "cf_valor_reembolso", to: "cf_valor_reembolso", type: "number" },
   { from: "cf_quantity_cancelada", to: "cf_quantity_cancelada", type: "number" },
-  { from: "cf_quantity_restante", to: "cf_quantity_restante", type: "number" },
+  { from: "cf_quantity_restante", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_valor_restante", to: "amount", type: "number" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
 ];
