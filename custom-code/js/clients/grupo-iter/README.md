@@ -54,7 +54,7 @@ Pagamento recusado` no evento de antifraude.
 | compra-site-sucesso-socio | `bondinho/compraSiteSucessoSocio.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/JxoIurd` |
 | carrinho-abandonado | `bondinho/carrinhoAbandonado.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/X8dakrW` |
 | cancelamento | `bondinho/cancelamento.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/HMvVYs2` |
-| reagendamento | `bondinho/reagendamento.js` | sandbox | _(a preencher após cadastro)_ |
+| reagendamento | `bondinho/reagendamento.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/xo14TlC` |
 
 ---
 
