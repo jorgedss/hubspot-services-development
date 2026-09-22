@@ -26,7 +26,9 @@ custom-code/js/clients/grupo-iter/
 │   ├── compraSiteSucessoSocio.js     # evento compra-site-sucesso-socio
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
 │   ├── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
-│   └── carrinhoAbandonado.js         # evento carrinho-abandonado
+│   ├── carrinhoAbandonado.js         # evento carrinho-abandonado
+│   ├── cancelamento.js               # evento cancelamento
+│   └── reagendamento.js              # evento reagendamento
 ├── c2rio/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
@@ -51,6 +53,8 @@ Pagamento recusado` no evento de antifraude.
 | compra-site-negada-cartao | `bondinho/compraSiteNegadaCartao.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/LjoHHQQ` |
 | compra-site-sucesso-socio | `bondinho/compraSiteSucessoSocio.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/JxoIurd` |
 | carrinho-abandonado | `bondinho/carrinhoAbandonado.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/X8dakrW` |
+| cancelamento | `bondinho/cancelamento.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/HMvVYs2` |
+| reagendamento | `bondinho/reagendamento.js` | sandbox | _(a preencher após cadastro)_ |
 
 ---
 
