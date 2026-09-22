@@ -34,30 +34,42 @@ const LOSS_REASON = "Cancelamento";
 const BUSINESS_UNIT_ID = "4554145";
 
 const CONTACT_FIELDS = [
+  { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
+  { from: "traffic_medium", to: "utm_medium", type: "text" },
+  { from: "traffic_source", to: "utm_source", type: "text" },
   { from: "email", to: "email", type: "text" },
   { from: "name", to: "firstname", type: "text" },
   { from: "mobile_phone", to: "phone", type: "text" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date" },
-  { from: "cf_lingua", to: "cf_language", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "text" },
+  { from: "cf_language", to: "cf_language", type: "text" },
+  { from: "cf_motivo_cancelamento", to: "cf_motivo_cancelamento", type: "text" },
+  { from: "cf_valor_reembolso", to: "cf_valor_reembolso", type: "number" },
+  { from: "cf_quantity_cancelada", to: "cf_quantity_cancelada", type: "number" },
+  { from: "cf_quantity_restante", to: "cf_quantity_restante", type: "number" },
+  { from: "cf_valor_restante", to: "cf_valor_pedido", type: "number" },
+  { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
 ];
 
 const DEAL_FIELDS = [
+  { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
+  { from: "traffic_medium", to: "utm_medium", type: "text" },
+  { from: "traffic_source", to: "utm_source", type: "text" },
   { from: "email", to: "email_do_contato_principal", type: "text" },
   { from: "name", to: "dealname", type: "text", fallbackFrom: "cf_id_pedido" },
   { from: "mobile_phone", to: "phone", type: "text" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_date_visit_expected", to: "data_da_visita", type: "date" },
-  { from: "cf_lingua", to: "idioma", type: "idioma" },
   { from: "cf_product", to: "cf_produto", type: "text" },
+  { from: "cf_language", to: "idioma", type: "idioma" },
   { from: "cf_motivo_cancelamento", to: "cf_motivo_cancelamento", type: "text" },
   { from: "cf_valor_reembolso", to: "cf_valor_reembolso", type: "number" },
   { from: "cf_quantity_cancelada", to: "cf_quantity_cancelada", type: "number" },
   { from: "cf_quantity_restante", to: "cf_quantity_restante", type: "number" },
-  { from: "cf_valor_restante", to: "cf_valor_restante", type: "number" },
+  { from: "cf_valor_restante", to: "amount", type: "number" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
 ];
 
@@ -79,7 +91,7 @@ const toDateString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
-// cf_lingua -> idioma (dropdown ingles/portugues/espanhol).
+// cf_language -> idioma (dropdown ingles/portugues/espanhol).
 const toIdioma = (valor) => {
   if (valor == null || valor === "") return null;
   const normalizedValue = String(valor)
