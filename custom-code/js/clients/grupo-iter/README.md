@@ -72,4 +72,4 @@ Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554144`.
 
 | Evento | Script | Conta | Endpoint / link de cadastro |
 |---|---|---|---|
-| compra-site-sucesso | `c2rio/compraSiteSucesso.js` | sandbox | _(a preencher após cadastro)_ |
+| compra-site-sucesso | `c2rio/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/Ok2f2Of` |
