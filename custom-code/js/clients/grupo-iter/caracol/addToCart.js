@@ -9,13 +9,10 @@
 // conversões de tipo.
 //
 // O contato inscrito no workflow já fornece o record id em event.object.objectId
-// e é atualizado via PATCH na API v3 de contacts. Cada unidade de negócio tem
-// uma brand: a propriedade hs_all_assigned_business_unit_ids recebe o id da BU
-// Caracol (4554143). O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
+// e é atualizado via PATCH na API v3 de contacts. Este evento não atualiza a
+// business unit do contato. O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
 // nunca hardcoded.
 // ---------------------------------------------------------------------------
-
-const BUSINESS_UNIT_ID = "4554143";
 
 // As datas "data e hora" do payload vêm em horário local do cliente
 // (America/Sao_Paulo, offset fixo -03:00, sem horário de verão desde 2019) e
@@ -31,7 +28,7 @@ const FIELD_MAP = [
   { from: "email", to: "email", type: "text" },
   { from: "name", to: "firstname", type: "text" },
   { from: "cf_sobrenome", to: "lastname", type: "text" },
-  { from: "cf_data_de_nascimento", to: "data_de_nascimento", type: "date", dateFormat: "MM/DD/YYYY" },
+  { from: "cf_data_de_nascimento", to: "date_of_birth", type: "dateISO" },
   { from: "cf_telefone_contato", to: "phone", type: "text" },
   { from: "cf_cpf_passaporte", to: "cpf", type: "text" },
   { from: "country", to: "country", type: "text" },
@@ -111,6 +108,18 @@ const toDateString = (raw, dateFormat) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
+// cf_data_de_nascimento: o SIG já envia YYYY-MM-DD, então o valor é repassado
+// direto para a HubSpot (formato nativo da propriedade date).
+const toDateISOString = (raw) => {
+  const match = /^\s*(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(raw || ""));
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${year}-${padNumber(month)}-${padNumber(day)}`;
+};
+
 // Combina uma data com um horário "HH:mm:ss" (ambos em horário local do
 // cliente) e devolve timestamp em milissegundos (UTC), o formato que a HubSpot
 // aceita para propriedades "date and time". Retorna null se a data estiver
@@ -145,6 +154,8 @@ const convert = (field, valor) => {
       return toNumber(valor);
     case "date":
       return toDateString(valor, field.dateFormat);
+    case "dateISO":
+      return toDateISOString(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
@@ -201,8 +212,6 @@ exports.main = async (event, callback) => {
         : convert(field, payload[field.from]);
     if (converted != null) properties[field.to] = converted;
   }
-  properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
-
   if (!Object.keys(properties).length) {
     throw new Error("Nenhuma propriedade a mapear no payload.");
   }

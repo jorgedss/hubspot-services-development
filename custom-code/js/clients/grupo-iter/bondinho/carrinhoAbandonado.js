@@ -16,9 +16,9 @@ const axios = require("axios");
 // motivo_de_perda "Carrinho abandonado". A associação contato->deal é feita
 // após gravar os dois registros.
 //
-// Cada unidade de negócio tem uma brand: a propriedade
-// hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
-// no contato quanto no deal.
+// Cada unidade de negócio tem uma brand: o DEAL recebe a BU Bondinho (4554145)
+// como valor único na propriedade hs_all_assigned_business_unit_ids. O contato
+// não recebe atualização de business unit neste evento.
 //
 // Regras de conversão específicas deste evento:
 //   - cf_data_de_nascimento: DD/MM/YYYY -> YYYY-MM-DD.
@@ -39,7 +39,7 @@ const CONTACT_FIELDS = [
   { from: "traffic_source", to: "utm_source", type: "text" },
   { from: "email", to: "email", type: "text" },
   { from: "name", to: "firstname", type: "text" },
-  { from: "cf_data_de_nascimento", to: "data_de_nascimento", type: "date" },
+  { from: "cf_data_de_nascimento", to: "date_of_birth", type: "dateISO" },
   { from: "cf_cep", to: "zip", type: "text" },
   { from: "cf_cpf", to: "cpf", type: "text" },
   { from: "city", to: "city", type: "text" },
@@ -80,6 +80,18 @@ const toNumber = (valor) => {
 };
 
 const padNumber = (number) => String(number).padStart(2, "0");
+
+// cf_data_de_nascimento: o SIG já envia YYYY-MM-DD, então o valor é repassado
+// direto para a HubSpot (formato nativo da propriedade date).
+const toDateISOString = (raw) => {
+  const match = /^\s*(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(raw || ""));
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${year}-${padNumber(month)}-${padNumber(day)}`;
+};
 
 // cf_data_de_nascimento: DD/MM/YYYY -> YYYY-MM-DD.
 const toDateString = (raw) => {
@@ -137,6 +149,8 @@ const convertField = (field, payload) => {
       return toNumber(valor);
     case "date":
       return toDateString(valor);
+    case "dateISO":
+      return toDateISOString(valor);
     case "dateVisit":
       return toDateVisitString(valor);
     case "idioma":
@@ -146,7 +160,19 @@ const convertField = (field, payload) => {
   }
 };
 
-const buildProperties = (fields, payload) => {
+// Monta as propriedades do CONTATO sem a business unit: ela é resolvida no
+// fluxo principal por append, para que o contato acumule as BUs das marcas.
+const buildContactProperties = (fields, payload) => {
+  const properties = {};
+  for (const field of fields) {
+    const converted = convertField(field, payload);
+    if (converted != null) properties[field.to] = converted;
+  }
+  return properties;
+};
+
+// Monta as propriedades do DEAL com a business unit da marca como valor único.
+const buildDealProperties = (fields, payload) => {
   const properties = {};
   for (const field of fields) {
     const converted = convertField(field, payload);
@@ -186,8 +212,8 @@ exports.main = async (event, callback) => {
     timeout: 18000,
   });
 
-  const contactProperties = buildProperties(CONTACT_FIELDS, payload);
-  const dealProperties = buildProperties(DEAL_FIELDS, payload);
+  const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
+  const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {
     // 1. Atualiza o contato.

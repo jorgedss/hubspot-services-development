@@ -11,9 +11,10 @@ const axios = require("axios");
 // O contato é resolvido pelo e-mail via API search, e o deal vem pronto em
 // event.object.objectId.
 //
-// Cada unidade de negócio tem uma brand: a propriedade
-// hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
-// no contato quanto no deal.
+// Cada unidade de negócio tem uma brand. O DEAL recebe a BU Bondinho (4554145)
+// como valor único. O CONTATO recebe as BUs vindas do campo `bu` do payload
+// (nomes separados por vírgula, mapeados para ids) mescladas com o valor atual,
+// sem duplicar.
 //
 // Regras de conversão específicas deste evento:
 //   - cf_data_visita (contato, datetime) combina cf_date_visit_expected +
@@ -111,7 +112,19 @@ const convertField = (field, payload) => {
   }
 };
 
-const buildProperties = (fields, payload) => {
+// Monta as propriedades do CONTATO sem a business unit: ela é resolvida no
+// fluxo principal por append, para que o contato acumule as BUs das marcas.
+const buildContactProperties = (fields, payload) => {
+  const properties = {};
+  for (const field of fields) {
+    const converted = convertField(field, payload);
+    if (converted != null) properties[field.to] = converted;
+  }
+  return properties;
+};
+
+// Monta as propriedades do DEAL com a business unit da marca como valor único.
+const buildDealProperties = (fields, payload) => {
   const properties = {};
   for (const field of fields) {
     const converted = convertField(field, payload);
@@ -119,6 +132,46 @@ const buildProperties = (fields, payload) => {
   }
   properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
   return properties;
+};
+
+// Mapa nome de marca -> id da business unit (fixo).
+const BU_NAME_TO_ID = {
+  Bondinho: "4554145",
+  Caracol: "4554143",
+  C2Rio: "4554144",
+};
+
+// Converte a string `bu` do payload (ex.: "Bondinho, Caracol") em uma lista de
+// ids: separa por vírgula, remove espaços e entradas vazias, e mapeia cada nome
+// para o id correspondente. Nomes desconhecidos são ignorados.
+const mapBuNamesToIds = (buString) => {
+  return String(buString || "")
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name !== "")
+    .map((name) => BU_NAME_TO_ID[name])
+    .filter((id) => id != null);
+};
+
+// Une a lista atual de BUs do contato (string separada por ';') com os novos
+// ids, sem duplicar e sem manter entradas vazias.
+const mergeBusinessUnitIds = (currentValue, newIds) => {
+  const units = new Set(
+    String(currentValue || "")
+      .split(";")
+      .map((unit) => unit.trim())
+      .filter((unit) => unit !== ""),
+  );
+  for (const id of newIds) units.add(id);
+  return Array.from(units).join(";");
+};
+
+// Lê o valor atual de hs_all_assigned_business_unit_ids do contato.
+const getContactBusinessUnits = async (contactId, hubspotClient) => {
+  const { data } = await hubspotClient.get(
+    `/crm/v3/objects/contacts/${contactId}?properties=hs_all_assigned_business_unit_ids`,
+  );
+  return data?.properties?.hs_all_assigned_business_unit_ids || "";
 };
 
 exports.main = async (event, callback) => {
@@ -159,8 +212,8 @@ exports.main = async (event, callback) => {
     timeout: 18000,
   });
 
-  const contactProperties = buildProperties(CONTACT_FIELDS, payload);
-  const dealProperties = buildProperties(DEAL_FIELDS, payload);
+  const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
+  const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {
     const contactId = await withStep("resolverContato", () =>
@@ -169,6 +222,17 @@ exports.main = async (event, callback) => {
 
     if (!contactId) {
       throw new Error(`Contato ${email} não encontrado no portal.`);
+    }
+
+    const currentBusinessUnits = await withStep("lerContatoBU", () =>
+      getContactBusinessUnits(contactId, hubspotClient),
+    );
+    const newBusinessUnitIds = mapBuNamesToIds(payload.bu);
+    if (newBusinessUnitIds.length) {
+      contactProperties["hs_all_assigned_business_unit_ids"] = mergeBusinessUnitIds(
+        currentBusinessUnits,
+        newBusinessUnitIds,
+      );
     }
 
     await withStep("atualizarDeal", () =>

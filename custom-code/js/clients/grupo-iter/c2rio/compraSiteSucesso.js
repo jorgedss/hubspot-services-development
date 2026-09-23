@@ -12,9 +12,9 @@
 // no pipeline 927835212 (Venda de Bilhete), estágio 1422040488 (Venda realizada).
 // A associação contato->deal é feita após gravar os dois registros.
 //
-// Cada unidade de negócio tem uma brand: a propriedade
-// hs_all_assigned_business_unit_ids recebe o id da BU C2Rio (4554144) tanto no
-// contato quanto no deal.
+// Cada unidade de negócio tem uma brand: o DEAL recebe a BU C2Rio (4554144)
+// como valor único na propriedade hs_all_assigned_business_unit_ids. O contato
+// não recebe atualização de business unit neste evento.
 //
 // Regras de conversão específicas deste evento:
 //   - cf_accept_communication: Sim/SIM/1/true -> true; qualquer outro -> false.
@@ -168,7 +168,19 @@ const convertField = (field, payload) => {
   }
 };
 
-const buildProperties = (fields, payload) => {
+// Monta as propriedades do CONTATO sem a business unit: ela é resolvida no
+// fluxo principal por append, para que o contato acumule as BUs das marcas.
+const buildContactProperties = (fields, payload) => {
+  const properties = {};
+  for (const field of fields) {
+    const converted = convertField(field, payload);
+    if (converted != null) properties[field.to] = converted;
+  }
+  return properties;
+};
+
+// Monta as propriedades do DEAL com a business unit da marca como valor único.
+const buildDealProperties = (fields, payload) => {
   const properties = {};
   for (const field of fields) {
     const converted = convertField(field, payload);
@@ -215,8 +227,8 @@ exports.main = async (event, callback) => {
     timeout: 18000,
   });
 
-  const contactProperties = buildProperties(CONTACT_FIELDS, payload);
-  const dealProperties = buildProperties(DEAL_FIELDS, payload);
+  const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
+  const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {
     await withStep("atualizarContato", () =>

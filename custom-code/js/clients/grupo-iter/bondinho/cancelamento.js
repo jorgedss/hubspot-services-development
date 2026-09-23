@@ -3,10 +3,11 @@ const axios = require("axios");
 // ---------------------------------------------------------------------------
 // Grupo Iter - BU Bondinho - evento cancelamento (SIG).
 //
-// Contexto: action de custom code em um workflow cujo trigger é webhook. A
-// chave de inscrição é o e-mail. O evento atualiza o CONTATO inscrito no
-// workflow e faz UPSERT de um DEAL associado (chave única = booking), com uma
-// regra de estágio baseada em cf_quantity_restante.
+// Contexto: action de custom code em um workflow cujo trigger é webhook. O
+// objeto inscrito no workflow é o DEAL (event.object.objectId é o id do deal),
+// e o CONTATO é resolvido pelo e-mail do payload. O evento atualiza o DEAL
+// inscrito e o CONTATO associado (resolvido pelo e-mail), com uma regra de
+// estágio baseada em cf_quantity_restante.
 //
 // Regra de negócio:
 //   - Se cf_quantity_restante <= 0: move o deal para a etapa Perdido
@@ -14,13 +15,14 @@ const axios = require("axios");
 //   - Se cf_quantity_restante > 0: mantém o deal no estágio atual e atualiza
 //     quantidade_de_bilhetes = cf_quantity_restante e amount = cf_valor_restante.
 //
-// O contato é identificado por event.object.objectId. O deal é resolvido pela
-// propriedade `booking` (que recebe o cf_id_pedido). A associação contato->deal
-// é feita após gravar os dois registros.
+// O deal é identificado por event.object.objectId. O contato é resolvido pelo
+// e-mail via API search. A associação contato->deal é feita após gravar os dois
+// registros.
 //
-// Cada unidade de negócio tem uma brand: a propriedade
-// hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
-// no contato quanto no deal.
+// Cada unidade de negócio tem uma brand. O DEAL recebe a BU Bondinho (4554145)
+// como valor único. O CONTATO recebe as BUs vindas do campo `bu` do payload
+// (nomes separados por vírgula, mapeados para ids) mescladas com o valor atual,
+// sem duplicar.
 //
 // Campos de cancelamento (deal): cf_motivo_cancelamento, cf_valor_reembolso,
 // cf_quantity_cancelada, cf_quantity_restante, cf_valor_restante, cf_bilhetes.
@@ -129,7 +131,19 @@ const convertField = (field, payload) => {
   }
 };
 
-const buildProperties = (fields, payload) => {
+// Monta as propriedades do CONTATO sem a business unit: ela é resolvida no
+// fluxo principal por append, para que o contato acumule as BUs das marcas.
+const buildContactProperties = (fields, payload) => {
+  const properties = {};
+  for (const field of fields) {
+    const converted = convertField(field, payload);
+    if (converted != null) properties[field.to] = converted;
+  }
+  return properties;
+};
+
+// Monta as propriedades do DEAL com a business unit da marca como valor único.
+const buildDealProperties = (fields, payload) => {
   const properties = {};
   for (const field of fields) {
     const converted = convertField(field, payload);
@@ -137,6 +151,46 @@ const buildProperties = (fields, payload) => {
   }
   properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
   return properties;
+};
+
+// Mapa nome de marca -> id da business unit (fixo).
+const BU_NAME_TO_ID = {
+  Bondinho: "4554145",
+  Caracol: "4554143",
+  C2Rio: "4554144",
+};
+
+// Converte a string `bu` do payload (ex.: "Bondinho, Caracol") em uma lista de
+// ids: separa por vírgula, remove espaços e entradas vazias, e mapeia cada nome
+// para o id correspondente. Nomes desconhecidos são ignorados.
+const mapBuNamesToIds = (buString) => {
+  return String(buString || "")
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name !== "")
+    .map((name) => BU_NAME_TO_ID[name])
+    .filter((id) => id != null);
+};
+
+// Une a lista atual de BUs do contato (string separada por ';') com os novos
+// ids, sem duplicar e sem manter entradas vazias.
+const mergeBusinessUnitIds = (currentValue, newIds) => {
+  const units = new Set(
+    String(currentValue || "")
+      .split(";")
+      .map((unit) => unit.trim())
+      .filter((unit) => unit !== ""),
+  );
+  for (const id of newIds) units.add(id);
+  return Array.from(units).join(";");
+};
+
+// Lê o valor atual de hs_all_assigned_business_unit_ids do contato.
+const getContactBusinessUnits = async (contactId, hubspotClient) => {
+  const { data } = await hubspotClient.get(
+    `/crm/v3/objects/contacts/${contactId}?properties=hs_all_assigned_business_unit_ids`,
+  );
+  return data?.properties?.hs_all_assigned_business_unit_ids || "";
 };
 
 exports.main = async (event, callback) => {
@@ -153,14 +207,15 @@ exports.main = async (event, callback) => {
 
   const payload = event.inputFields || {};
 
-  const contactId = String(event.object?.objectId || "");
-  if (!contactId) {
-    throw new Error("Record id do contato ausente no evento (event.object.objectId).");
+  // No cancelamento, o objeto inscrito no workflow é o DEAL, não o contato.
+  const dealId = String(event.object?.objectId || "");
+  if (!dealId) {
+    throw new Error("Record id do deal ausente no evento (event.object.objectId).");
   }
 
-  const bookingKey = String(payload.cf_id_pedido || "").trim();
-  if (!bookingKey) {
-    throw new Error("Campo cf_id_pedido ausente ou vazio no payload. Não é possível resolver o deal.");
+  const email = String(payload.email || "").trim().toLowerCase();
+  if (!email) {
+    throw new Error("Campo email ausente ou vazio no payload. Não é possível resolver o contato.");
   }
 
   const quantityRestante = toNumber(payload.cf_quantity_restante);
@@ -171,7 +226,7 @@ exports.main = async (event, callback) => {
   const perdeuTodoBilhete = quantityRestante <= 0;
 
   console.log(
-    `[bondinhoCancelamento] contato ${contactId} | booking ${bookingKey} | restante ${quantityRestante} | perdido: ${perdeuTodoBilhete}`,
+    `[bondinhoCancelamento] deal ${dealId} | email ${email} | restante ${quantityRestante} | perdido: ${perdeuTodoBilhete}`,
   );
 
   const hubspotClient = axios.create({
@@ -183,24 +238,34 @@ exports.main = async (event, callback) => {
     timeout: 18000,
   });
 
-  const contactProperties = buildProperties(CONTACT_FIELDS, payload);
-  const dealProperties = buildProperties(DEAL_FIELDS, payload);
+  const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
+  const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {
+    const contactId = await withStep("resolverContato", () =>
+      findContactByEmail(email, hubspotClient),
+    );
+
+    if (!contactId) {
+      throw new Error(`Contato ${email} não encontrado no portal.`);
+    }
+
+    const currentBusinessUnits = await withStep("lerContatoBU", () =>
+      getContactBusinessUnits(contactId, hubspotClient),
+    );
+    const newBusinessUnitIds = mapBuNamesToIds(payload.bu);
+    if (newBusinessUnitIds.length) {
+      contactProperties["hs_all_assigned_business_unit_ids"] = mergeBusinessUnitIds(
+        currentBusinessUnits,
+        newBusinessUnitIds,
+      );
+    }
+
     await withStep("atualizarContato", () =>
       hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
         properties: contactProperties,
       }),
     );
-
-    const dealId = await withStep("resolverDeal", () =>
-      findDealByBooking(bookingKey, hubspotClient),
-    );
-
-    // Cancelamento pressupõe um deal já existente (criado pela compra).
-    if (!dealId) {
-      throw new Error(`Deal com booking ${bookingKey} não encontrado. Não é possível cancelar um deal inexistente.`);
-    }
 
     // Define o estágio e o payload de gravação conforme a regra de negócio.
     let dealToWrite;
@@ -246,16 +311,16 @@ exports.main = async (event, callback) => {
 
 // --- helpers de HubSpot -----------------------------------------------------
 
-const findDealByBooking = async (bookingKey, hubspotClient) => {
-  const { data } = await hubspotClient.post("/crm/v3/objects/deals/search", {
+const findContactByEmail = async (email, hubspotClient) => {
+  const { data } = await hubspotClient.post("/crm/v3/objects/contacts/search", {
     filterGroups: [
-      { filters: [{ propertyName: "booking", operator: "EQ", value: bookingKey }] },
+      { filters: [{ propertyName: "email", operator: "EQ", value: email }] },
     ],
-    properties: ["booking"],
+    properties: ["email"],
     limit: 1,
   });
-  const deal = (data.results || [])[0];
-  return deal ? deal.id : null;
+  const contact = (data.results || [])[0];
+  return contact ? contact.id : null;
 };
 
 const associateContactDeal = async (contactId, dealId, hubspotClient) => {

@@ -13,9 +13,9 @@ const axios = require("axios");
 // realizada). A associação contato->deal é feita após resolver/gravar os dois
 // registros.
 //
-// Cada unidade de negócio tem uma brand: a propriedade
-// hs_all_assigned_business_unit_ids recebe o id da BU Bondinho (4554145) tanto
-// no contato quanto no deal.
+// Cada unidade de negócio tem uma brand: o DEAL recebe a BU Bondinho (4554145)
+// como valor único na propriedade hs_all_assigned_business_unit_ids. O contato
+// não recebe atualização de business unit neste evento.
 //
 // Regras de conversão específicas deste evento:
 //   - cf_typepayments: "3" vira "Cartão"; qualquer outro valor vira "Pix".
@@ -200,13 +200,25 @@ const convertField = (field, payload) => {
   }
 };
 
-const buildProperties = (fields, payload) => {
+// Monta as propriedades do CONTATO sem a business unit: ela é resolvida no
+// fluxo principal por append, para que o contato acumule as BUs das marcas.
+const buildContactProperties = (fields, payload) => {
   const properties = {};
   for (const field of fields) {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
-  // A brand da unidade de negócio é obrigatória em contato e deal.
+  return properties;
+};
+
+// Monta as propriedades do DEAL com a business unit da marca como valor único.
+const buildDealProperties = (fields, payload) => {
+  const properties = {};
+  for (const field of fields) {
+    const converted = convertField(field, payload);
+    if (converted != null) properties[field.to] = converted;
+  }
+  // A brand da unidade de negócio é obrigatória no deal.
   properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
   return properties;
 };
@@ -248,8 +260,8 @@ exports.main = async (event, callback) => {
     timeout: 18000,
   });
 
-  const contactProperties = buildProperties(CONTACT_FIELDS, payload);
-  const dealProperties = buildProperties(DEAL_FIELDS, payload);
+  const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
+  const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {
     // 1. Atualiza o contato.
