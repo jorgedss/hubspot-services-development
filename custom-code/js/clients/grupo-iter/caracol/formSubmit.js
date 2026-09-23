@@ -13,6 +13,22 @@
 // nunca hardcoded.
 // ---------------------------------------------------------------------------
 
+// Ambiente da execução. Trocar manualmente para "production" no deploy.
+const ENV = "sandbox";
+
+const CONFIG = {
+  sandbox: {
+    businessUnits: { Bondinho: "4554145", Caracol: "4554143", C2Rio: "4554144" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+  production: {
+    businessUnits: { Bondinho: "4292163", Caracol: "4275397", C2Rio: "4344366" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+};
+
+const ACTIVE = CONFIG[ENV];
+
 // As datas "data e hora" do payload vêm em horário local do cliente
 // (America/Sao_Paulo, offset fixo -03:00, sem horário de verão desde 2019) e
 // são convertidas para timestamp UTC na função toDateTimeMs. As datas "só data"

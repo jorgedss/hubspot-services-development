@@ -26,7 +26,21 @@ const axios = require("axios");
 // O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG, nunca hardcoded.
 // ---------------------------------------------------------------------------
 
-const BUSINESS_UNIT_ID = "4554145";
+// Ambiente da execução. Trocar manualmente para "production" no deploy.
+const ENV = "sandbox";
+
+const CONFIG = {
+  sandbox: {
+    businessUnits: { Bondinho: "4554145", Caracol: "4554143", C2Rio: "4554144" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+  production: {
+    businessUnits: { Bondinho: "4292163", Caracol: "4275397", C2Rio: "4344366" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+};
+
+const ACTIVE = CONFIG[ENV];
 
 const CONTACT_FIELDS = [
   { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
@@ -130,16 +144,12 @@ const buildDealProperties = (fields, payload) => {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
-  properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
+  properties["hs_all_assigned_business_unit_ids"] = ACTIVE.businessUnits.Bondinho;
   return properties;
 };
 
-// Mapa nome de marca -> id da business unit (fixo).
-const BU_NAME_TO_ID = {
-  Bondinho: "4554145",
-  Caracol: "4554143",
-  C2Rio: "4554144",
-};
+// Mapa nome de marca -> id da business unit (vindo do ambiente ativo).
+const BU_NAME_TO_ID = ACTIVE.businessUnits;
 
 // Converte a string `bu` do payload (ex.: "Bondinho, Caracol") em uma lista de
 // ids: separa por vírgula, remove espaços e entradas vazias, e mapeia cada nome

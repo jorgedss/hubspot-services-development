@@ -28,10 +28,24 @@
 // O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG, nunca hardcoded.
 // ---------------------------------------------------------------------------
 
-const PIPELINE_ID = "927835212";
-const PIPELINE_STAGE_ID = "1422054714";
+// Ambiente da execução. Trocar manualmente para "production" no deploy.
+const ENV = "sandbox";
+
+const CONFIG = {
+  sandbox: {
+    businessUnits: { Bondinho: "4554145", Caracol: "4554143", C2Rio: "4554144" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+  production: {
+    businessUnits: { Bondinho: "4292163", Caracol: "4275397", C2Rio: "4344366" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+};
+
+const ACTIVE = CONFIG[ENV];
+
 const LOSS_REASON = "Pagamento recusado (cartão)";
-const BUSINESS_UNIT_ID = "4554144";
+
 
 const CONTACT_FIELDS = [
   { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
@@ -188,7 +202,7 @@ const buildDealProperties = (fields, payload) => {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
-  properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
+  properties["hs_all_assigned_business_unit_ids"] = ACTIVE.businessUnits.C2Rio;
   return properties;
 };
 
@@ -246,8 +260,8 @@ exports.main = async (event, callback) => {
     // Deal da recusa: sempre na etapa Perdido, com motivo de perda.
     const dealToWrite = {
       ...dealProperties,
-      pipeline: PIPELINE_ID,
-      dealstage: PIPELINE_STAGE_ID,
+      pipeline: ACTIVE.pipeline.id,
+      dealstage: ACTIVE.pipeline.stageLost,
       motivo_de_perda: LOSS_REASON,
     };
 
@@ -301,8 +315,8 @@ const findDealByBooking = async (bookingKey, hubspotClient) => {
 const createDeal = async (properties, hubspotClient) => {
   const { data } = await hubspotClient.post("/crm/v3/objects/deals", {
     properties: {
-      pipeline: PIPELINE_ID,
-      dealstage: PIPELINE_STAGE_ID,
+      pipeline: ACTIVE.pipeline.id,
+      dealstage: ACTIVE.pipeline.stageLost,
       ...properties,
     },
   });

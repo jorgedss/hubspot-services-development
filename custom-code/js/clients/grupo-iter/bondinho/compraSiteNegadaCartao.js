@@ -29,10 +29,24 @@ const axios = require("axios");
 // nunca hardcoded.
 // ---------------------------------------------------------------------------
 
-const PIPELINE_ID = "927835212";
-const PIPELINE_STAGE_ID = "1422054714";
+// Ambiente da execução. Trocar manualmente para "production" no deploy.
+const ENV = "sandbox";
+
+const CONFIG = {
+  sandbox: {
+    businessUnits: { Bondinho: "4554145", Caracol: "4554143", C2Rio: "4554144" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+  production: {
+    businessUnits: { Bondinho: "4292163", Caracol: "4275397", C2Rio: "4344366" },
+    pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+  },
+};
+
+const ACTIVE = CONFIG[ENV];
+
 const LOSS_REASON = "Pagamento recusado (cartão)";
-const BUSINESS_UNIT_ID = "4554145";
+
 
 const CONTACT_FIELDS = [
   { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
@@ -220,7 +234,7 @@ const buildDealProperties = (fields, payload) => {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
-  properties["hs_all_assigned_business_unit_ids"] = BUSINESS_UNIT_ID;
+  properties["hs_all_assigned_business_unit_ids"] = ACTIVE.businessUnits.Bondinho;
   return properties;
 };
 
@@ -279,8 +293,8 @@ exports.main = async (event, callback) => {
 
     const dealToWrite = {
       ...dealProperties,
-      pipeline: PIPELINE_ID,
-      dealstage: PIPELINE_STAGE_ID,
+      pipeline: ACTIVE.pipeline.id,
+      dealstage: ACTIVE.pipeline.stageLost,
       motivo_de_perda: LOSS_REASON,
     };
 
