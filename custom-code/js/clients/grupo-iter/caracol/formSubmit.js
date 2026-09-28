@@ -62,7 +62,7 @@ const FIELD_MAP = [
   { from: "cf_aceite_regras", to: "cf_aceite_regras", type: "ackcheckbox" },
   { from: "cf_data_compra", to: "data_do_envio", type: "date", dateFormat: "DD/MM/YYYY" },
   { from: "cf_visita_esperada", to: "data_e_hora_da_visita_esperada", type: "datetime", timeField: "cf_hora_visita_selecionada", dateFormat: "DD/MM/YYYY" },
-  { from: "cf_lingua", to: "cf_language", type: "text" },
+  { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_localizador", to: "cf_localizador", type: "text" },
   { from: "cf_produto", to: "cf_produto", type: "text" },
   { from: "cf_order_payment_amount", to: "cf_valor_pedido", type: "number" },
@@ -158,6 +158,27 @@ const toDateTimeMs = (rawDate, rawTime, dateFormat) => {
   return Date.UTC(year, month - 1, day, hour, minute, second) + 3 * 60 * 60 * 1000;
 };
 
+// cf_lingua -> idioma (dropdown ingles/portugues/espanhol). Desconhecido ou
+// vazio retorna null (não grava).
+const toIdioma = (valor) => {
+  if (valor == null || valor === "") return null;
+  const normalizedValue = String(valor)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (normalizedValue === "br") {
+    return "portugues";
+  }
+  if (normalizedValue === "en") {
+    return "ingles";
+  }
+  if (normalizedValue === "es") {
+    return "espanhol";
+  }
+  return null;
+};
+
 // Aplica a conversão de tipo para um campo simples (não-datetime).
 const convert = (field, valor) => {
   switch (field.type) {
@@ -171,6 +192,8 @@ const convert = (field, valor) => {
       return toDateString(valor, field.dateFormat);
     case "dateISO":
       return toDateISOString(valor);
+    case "idioma":
+      return toIdioma(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }

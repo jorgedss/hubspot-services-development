@@ -63,7 +63,7 @@ const CONTACT_FIELDS = [
   { from: "cf_produto", to: "cf_produto", type: "text" },
   { from: "cf_order_payment_amount", to: "valor_carrinho_abandonado", type: "number" },
   { from: "cf_category", to: "cf_category", type: "text" },
-  { from: "cf_lingua", to: "cf_language", type: "text" },
+  { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
 ];
 
@@ -140,13 +140,13 @@ const toIdioma = (valor) => {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (["br", "pt", "pt-br", "ptbr", "portugues", "portuguese"].includes(normalizedValue)) {
+  if (normalizedValue === "br") {
     return "portugues";
   }
-  if (["en", "en-us", "ingles", "english"].includes(normalizedValue)) {
+  if (normalizedValue === "en") {
     return "ingles";
   }
-  if (["es", "espanhol", "spanish"].includes(normalizedValue)) {
+  if (normalizedValue === "es") {
     return "espanhol";
   }
   return null;

@@ -60,7 +60,7 @@ const CONTACT_FIELDS = [
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date" },
   { from: "cf_product", to: "cf_produto", type: "text" },
-  { from: "cf_language", to: "cf_language", type: "text" },
+  { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_motivo_cancelamento", to: "cf_motivo_cancelamento", type: "text" },
   { from: "cf_valor_reembolso", to: "cf_valor_reembolso", type: "number" },
   { from: "cf_quantity_cancelada", to: "cf_quantity_cancelada", type: "number" },
@@ -80,7 +80,7 @@ const DEAL_FIELDS = [
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_date_visit_expected", to: "data_da_visita", type: "date" },
   { from: "cf_product", to: "cf_produto", type: "text" },
-  { from: "cf_language", to: "idioma", type: "idioma" },
+  { from: "cf_lingua", to: "idioma", type: "idioma" },
   { from: "cf_motivo_cancelamento", to: "cf_motivo_cancelamento", type: "text" },
   { from: "cf_valor_reembolso", to: "cf_valor_reembolso", type: "number" },
   { from: "cf_quantity_cancelada", to: "cf_quantity_cancelada", type: "number" },
@@ -107,7 +107,7 @@ const toDateString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
-// cf_language -> idioma (dropdown ingles/portugues/espanhol).
+// cf_lingua -> idioma (dropdown ingles/portugues/espanhol).
 const toIdioma = (valor) => {
   if (valor == null || valor === "") return null;
   const normalizedValue = String(valor)
@@ -115,13 +115,13 @@ const toIdioma = (valor) => {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (["br", "pt", "pt-br", "ptbr", "portugues", "portuguese"].includes(normalizedValue)) {
+  if (normalizedValue === "br") {
     return "portugues";
   }
-  if (["en", "en-us", "ingles", "english"].includes(normalizedValue)) {
+  if (normalizedValue === "en") {
     return "ingles";
   }
-  if (["es", "espanhol", "spanish"].includes(normalizedValue)) {
+  if (normalizedValue === "es") {
     return "espanhol";
   }
   return null;
