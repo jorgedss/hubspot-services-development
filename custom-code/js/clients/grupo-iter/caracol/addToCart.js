@@ -9,9 +9,10 @@
 // conversões de tipo.
 //
 // O contato inscrito no workflow já fornece o record id em event.object.objectId
-// e é atualizado via PATCH na API v3 de contacts. Este evento não atualiza a
-// business unit do contato. O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
-// nunca hardcoded.
+// e é atualizado via PATCH na API v3 de contacts. A brand da marca (Caracol) é
+// gravada no contato via APPEND da constante ACTIVE.businessUnits.Caracol, sem
+// sobrescrever BUs já existentes. O token vem da secret
+// HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG, nunca hardcoded.
 // ---------------------------------------------------------------------------
 
 // Ambiente da execução. Trocar manualmente para "production" no deploy.
@@ -205,6 +206,27 @@ const convert = (field, valor) => {
 const convertDateTime = (field, dateVal, timeVal) =>
   toDateTimeMs(dateVal, timeVal, field.dateFormat);
 
+// Faz merge da brand da marca no valor atual de BUs do contato (string separada
+// por ';'), sem duplicar e sem manter entradas vazias.
+const mergeBusinessUnitIds = (currentValue, businessUnitId) => {
+  const units = new Set(
+    String(currentValue || "")
+      .split(";")
+      .map((unit) => unit.trim())
+      .filter((unit) => unit !== ""),
+  );
+  units.add(businessUnitId);
+  return Array.from(units).join(";");
+};
+
+// Lê o valor atual de hs_all_assigned_business_unit_ids do contato.
+const getContactBusinessUnits = async (contactId, hubspotClient) => {
+  const { data } = await hubspotClient.get(
+    `/crm/v3/objects/contacts/${contactId}?properties=hs_all_assigned_business_unit_ids`,
+  );
+  return data?.properties?.hs_all_assigned_business_unit_ids || "";
+};
+
 exports.main = async (event, callback) => {
   const respond = (payload) =>
     callback({
@@ -258,6 +280,15 @@ exports.main = async (event, callback) => {
   properties["payload"] = JSON.stringify(payload);
 
   try {
+    // Lê a BU atual do contato e faz append da brand da marca.
+    const currentBusinessUnits = await withStep("lerContatoBU", () =>
+      getContactBusinessUnits(contactId, hubspotClient),
+    );
+    properties["hs_all_assigned_business_unit_ids"] = mergeBusinessUnitIds(
+      currentBusinessUnits,
+      ACTIVE.businessUnits.Caracol,
+    );
+
     await withStep("atualizarContato", () =>
       hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
         properties,

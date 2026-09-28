@@ -20,9 +20,8 @@ const axios = require("axios");
 // registros.
 //
 // Cada unidade de negócio tem uma brand. O DEAL recebe a BU Bondinho (4554145)
-// como valor único. O CONTATO recebe as BUs vindas do campo `bu` do payload
-// (nomes separados por vírgula, mapeados para ids) mescladas com o valor atual,
-// sem duplicar.
+// como valor único. O CONTATO recebe a brand da marca via APPEND (a constante
+// ACTIVE.businessUnits.Bondinho é adicionada ao valor atual sem sobrescrever).
 //
 // Campos de cancelamento (deal): cf_motivo_cancelamento, cf_valor_reembolso,
 // cf_quantity_cancelada, cf_quantity_restante, cf_valor_restante, cf_bilhetes.
@@ -167,31 +166,16 @@ const buildDealProperties = (fields, payload) => {
   return properties;
 };
 
-// Mapa nome de marca -> id da business unit (vindo do ambiente ativo).
-const BU_NAME_TO_ID = ACTIVE.businessUnits;
-
-// Converte a string `bu` do payload (ex.: "Bondinho, Caracol") em uma lista de
-// ids: separa por vírgula, remove espaços e entradas vazias, e mapeia cada nome
-// para o id correspondente. Nomes desconhecidos são ignorados.
-const mapBuNamesToIds = (buString) => {
-  return String(buString || "")
-    .split(",")
-    .map((name) => name.trim())
-    .filter((name) => name !== "")
-    .map((name) => BU_NAME_TO_ID[name])
-    .filter((id) => id != null);
-};
-
-// Une a lista atual de BUs do contato (string separada por ';') com os novos
-// ids, sem duplicar e sem manter entradas vazias.
-const mergeBusinessUnitIds = (currentValue, newIds) => {
+// Faz merge da brand da marca no valor atual de BUs do contato (string separada
+// por ';'), sem duplicar e sem manter entradas vazias.
+const mergeBusinessUnitIds = (currentValue, businessUnitId) => {
   const units = new Set(
     String(currentValue || "")
       .split(";")
       .map((unit) => unit.trim())
       .filter((unit) => unit !== ""),
   );
-  for (const id of newIds) units.add(id);
+  units.add(businessUnitId);
   return Array.from(units).join(";");
 };
 
@@ -264,13 +248,10 @@ exports.main = async (event, callback) => {
     const currentBusinessUnits = await withStep("lerContatoBU", () =>
       getContactBusinessUnits(contactId, hubspotClient),
     );
-    const newBusinessUnitIds = mapBuNamesToIds(payload.bu);
-    if (newBusinessUnitIds.length) {
-      contactProperties["hs_all_assigned_business_unit_ids"] = mergeBusinessUnitIds(
-        currentBusinessUnits,
-        newBusinessUnitIds,
-      );
-    }
+    contactProperties["hs_all_assigned_business_unit_ids"] = mergeBusinessUnitIds(
+      currentBusinessUnits,
+      ACTIVE.businessUnits.Bondinho,
+    );
 
     await withStep("atualizarContato", () =>
       hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {

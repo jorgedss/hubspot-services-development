@@ -15,7 +15,8 @@ const axios = require("axios");
 //
 // Cada unidade de negócio tem uma brand: o DEAL recebe a BU Bondinho (4554145)
 // como valor único na propriedade hs_all_assigned_business_unit_ids. O contato
-// não recebe atualização de business unit neste evento.
+// recebe a brand da marca via APPEND (a constante ACTIVE.businessUnits.Bondinho
+// é adicionada ao valor atual sem sobrescrever).
 //
 // Regras de conversão específicas deste evento:
 //   - cf_typepayments: "3" vira "Cartão"; qualquer outro valor vira "Pix".
@@ -235,6 +236,27 @@ const buildDealProperties = (fields, payload) => {
   return properties;
 };
 
+// Faz merge da brand da marca no valor atual de BUs do contato (string separada
+// por ';'), sem duplicar e sem manter entradas vazias.
+const mergeBusinessUnitIds = (currentValue, businessUnitId) => {
+  const units = new Set(
+    String(currentValue || "")
+      .split(";")
+      .map((unit) => unit.trim())
+      .filter((unit) => unit !== ""),
+  );
+  units.add(businessUnitId);
+  return Array.from(units).join(";");
+};
+
+// Lê o valor atual de hs_all_assigned_business_unit_ids do contato.
+const getContactBusinessUnits = async (contactId, hubspotClient) => {
+  const { data } = await hubspotClient.get(
+    `/crm/v3/objects/contacts/${contactId}?properties=hs_all_assigned_business_unit_ids`,
+  );
+  return data?.properties?.hs_all_assigned_business_unit_ids || "";
+};
+
 exports.main = async (event, callback) => {
   const respond = (payload) =>
     callback({
@@ -277,6 +299,15 @@ exports.main = async (event, callback) => {
   const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {
+    // Lê a BU atual do contato e faz append da brand da marca.
+    const currentBusinessUnits = await withStep("lerContatoBU", () =>
+      getContactBusinessUnits(contactId, hubspotClient),
+    );
+    contactProperties["hs_all_assigned_business_unit_ids"] = mergeBusinessUnitIds(
+      currentBusinessUnits,
+      ACTIVE.businessUnits.Bondinho,
+    );
+
     // 1. Atualiza o contato.
     await withStep("atualizarContato", () =>
       hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
