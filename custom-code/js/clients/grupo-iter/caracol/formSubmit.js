@@ -231,6 +231,8 @@ exports.main = async (event, callback) => {
     throw new Error("Nenhuma propriedade a mapear no payload.");
   }
 
+  properties["payload"] = JSON.stringify(payload);
+
   try {
     await withStep("atualizarContato", () =>
       hubspotClient.patch(`/crm/v3/objects/contacts/${contactId}`, {
