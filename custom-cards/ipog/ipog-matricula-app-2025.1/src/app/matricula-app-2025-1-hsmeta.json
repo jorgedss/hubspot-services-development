@@ -1,0 +1,36 @@
+{
+  "config": {
+    "auth": {
+      "type": "static",
+      "optionalScopes": [],
+      "requiredScopes": [
+        "crm.schemas.quotes.write",
+        "crm.objects.line_items.write",
+        "crm.objects.contacts.write",
+        "crm.objects.line_items.read",
+        "crm.objects.deals.read",
+        "crm.objects.quotes.write",
+        "crm.schemas.custom.read",
+        "crm.objects.contacts.read",
+        "crm.objects.users.read",
+        "crm.objects.custom.read",
+        "crm.objects.quotes.read",
+        "crm.objects.custom.write",
+        "crm.objects.deals.write",
+        "e-commerce"
+      ],
+      "conditionallyRequiredScopes": []
+    },
+    "name": "IPOG Matricula App 2025.1",
+    "description": "This is an example private app that shows a custom card on the Deals record tab built with React-based frontend. This card demonstrates a simple handshake with HubSpot's serverless backend.",
+    "isUserLevel": false,
+    "distribution": "PRIVATE",
+    "permittedUrls": {
+      "img": [],
+      "fetch": [],
+      "iframe": []
+    }
+  },
+  "uid": "matricula-app-2025-1",
+  "type": "app"
+}

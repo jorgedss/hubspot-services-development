@@ -1,0 +1,13 @@
+{
+  "config": {
+    "entrypoint": "app/functions/generateEnrollment.js",
+    "secretKeys": [
+      "MULESOFT_BASE_URL",
+      "MULESOFT_PASSWORD",
+      "HUBSPOT_API_KEY",
+      "MULESOFT_USERNAME"
+    ]
+  },
+  "uid": "generateEnrollment",
+  "type": "app-function"
+}

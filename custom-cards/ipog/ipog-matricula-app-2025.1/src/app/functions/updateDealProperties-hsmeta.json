@@ -1,0 +1,10 @@
+{
+  "config": {
+    "entrypoint": "app/functions/updateDealProperties.js",
+    "secretKeys": [
+      "HUBSPOT_API_KEY"
+    ]
+  },
+  "uid": "updateDealProperties",
+  "type": "app-function"
+}

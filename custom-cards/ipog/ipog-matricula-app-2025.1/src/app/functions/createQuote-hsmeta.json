@@ -1,0 +1,10 @@
+{
+  "config": {
+    "entrypoint": "app/functions/createQuote.js",
+    "secretKeys": [
+      "HUBSPOT_API_KEY"
+    ]
+  },
+  "uid": "createQuote",
+  "type": "app-function"
+}

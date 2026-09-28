@@ -1,0 +1,11 @@
+{
+  "config": {
+    "entrypoint": "app/functions/fetchDiamanteIndications.js",
+    "secretKeys": [
+      "DIAMANTE_OBJ_ID",
+      "HUBSPOT_API_KEY"
+    ]
+  },
+  "uid": "fetchDiamanteIndications",
+  "type": "app-function"
+}

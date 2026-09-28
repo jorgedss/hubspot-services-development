@@ -1,0 +1,11 @@
+{
+  "config": {
+    "entrypoint": "app/functions/generateCheckoutLink.js",
+    "secretKeys": [
+      "CHECKOUT_BASE_URL",
+      "HUBSPOT_API_KEY"
+    ]
+  },
+  "uid": "generateCheckoutLink",
+  "type": "app-function"
+}

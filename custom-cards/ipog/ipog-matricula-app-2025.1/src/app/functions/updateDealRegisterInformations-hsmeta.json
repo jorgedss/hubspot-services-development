@@ -1,0 +1,10 @@
+{
+  "config": {
+    "entrypoint": "app/functions/updateDealRegisterInformations.js",
+    "secretKeys": [
+      "HUBSPOT_API_KEY"
+    ]
+  },
+  "uid": "updateDealRegisterInformations",
+  "type": "app-function"
+}

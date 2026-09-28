@@ -1,0 +1,12 @@
+{
+  "config": {
+    "entrypoint": "app/functions/fetchDiscount.js",
+    "secretKeys": [
+      "MULESOFT_BASE_URL",
+      "MULESOFT_PASSWORD",
+      "MULESOFT_USERNAME"
+    ]
+  },
+  "uid": "fetchDiscount",
+  "type": "app-function"
+}

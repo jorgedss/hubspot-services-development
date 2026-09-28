@@ -1,0 +1,8 @@
+{
+  "config": {
+    "entrypoint": "app/functions/fetchDealPropertyOptions.js",
+    "secretKeys": ["HUBSPOT_API_KEY"]
+  },
+  "uid": "fetchDealPropertyOptions",
+  "type": "app-function"
+}

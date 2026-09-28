@@ -1,0 +1,12 @@
+{
+  "config": {
+    "entrypoint": "app/functions/fetchFinancialPlan.js",
+    "secretKeys": [
+      "MULESOFT_BASE_URL",
+      "MULESOFT_PASSWORD",
+      "MULESOFT_USERNAME"
+    ]
+  },
+  "uid": "fetchFinancialPlan",
+  "type": "app-function"
+}

@@ -1,0 +1,11 @@
+{
+  "config": {
+    "entrypoint": "app/functions/updateDiamondStatus.js",
+    "secretKeys": [
+      "DIAMANTE_OBJ_ID",
+      "HUBSPOT_API_KEY"
+    ]
+  },
+  "uid": "updateDiamondStatus",
+  "type": "app-function"
+}

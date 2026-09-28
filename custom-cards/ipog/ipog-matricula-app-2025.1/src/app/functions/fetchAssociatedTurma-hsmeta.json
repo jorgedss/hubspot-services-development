@@ -1,0 +1,10 @@
+{
+  "config": {
+    "entrypoint": "app/functions/fetchAssociatedTurma.js",
+    "secretKeys": [
+      "HUBSPOT_API_KEY"
+    ]
+  },
+  "uid": "fetchAssociatedTurma",
+  "type": "app-function"
+}

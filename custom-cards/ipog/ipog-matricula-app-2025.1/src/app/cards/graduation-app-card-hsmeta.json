@@ -1,0 +1,17 @@
+{
+  "config": {
+    "name": "Plano Financeiro - Graduação",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/GraduationPlanCard.jsx",
+    "description": "Card de plano financeiro para graduação",
+    "objectTypes": [
+      "deals"
+    ],
+    "previewImage": {
+      "file": "/app/cards/assets/example-card-preview.png",
+      "altText": "Graduation financial plan card UI extension"
+    }
+  },
+  "uid": "graduation-app-card",
+  "type": "card"
+}
