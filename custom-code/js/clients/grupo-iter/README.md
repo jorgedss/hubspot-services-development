@@ -28,7 +28,8 @@ custom-code/js/clients/grupo-iter/
 │   ├── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
 │   ├── carrinhoAbandonado.js         # evento carrinho-abandonado
 │   ├── cancelamento.js               # evento cancelamento
-│   └── reagendamento.js              # evento reagendamento
+│   ├── reagendamento.js              # evento reagendamento
+│   └── loginSite.js                  # evento login-site
 ├── c2rio/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
@@ -55,6 +56,7 @@ Pagamento recusado` no evento de antifraude.
 | carrinho-abandonado | `bondinho/carrinhoAbandonado.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/X8dakrW` |
 | cancelamento | `bondinho/cancelamento.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/HMvVYs2` |
 | reagendamento | `bondinho/reagendamento.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/xo14TlC` |
+| login-site | `bondinho/loginSite.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/KZ6vPRF` |
 
 ---
 
