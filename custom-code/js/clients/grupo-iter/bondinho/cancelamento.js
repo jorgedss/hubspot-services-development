@@ -250,7 +250,9 @@ exports.main = async (event, callback) => {
 
   const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
   contactProperties["payload"] = JSON.stringify(payload, null, 2);
+  contactProperties["cancelado"] = true;
   const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
+  dealProperties["cancelado"] = true;
 
   try {
     const contactId = await withStep("resolverContato", () =>
