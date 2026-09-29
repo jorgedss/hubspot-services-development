@@ -53,7 +53,7 @@ const CONTACT_FIELDS = [
   { from: "state", to: "state", type: "text" },
   { from: "city", to: "city", type: "text" },
   { from: "country", to: "country", type: "text" },
-  { from: "mobile_phone", to: "phone", type: "text" },
+  { from: "mobile_phone", to: "phone", type: "phone" },
   { from: "cf_valor_pedido", to: "cf_valor_pedido", type: "number" },
   { from: "cf_typepayments", to: "cf_typepayments", type: "payments" },
   { from: "cf_status_item", to: "status_item", type: "text" },
@@ -79,7 +79,7 @@ const DEAL_FIELDS = [
   { from: "state", to: "state", type: "text" },
   { from: "city", to: "cidade", type: "text" },
   { from: "country", to: "country", type: "text" },
-  { from: "mobile_phone", to: "phone", type: "text" },
+  { from: "mobile_phone", to: "phone", type: "phone" },
   { from: "cf_valor_pedido", to: "amount", type: "number" },
   { from: "cf_typepayments", to: "cf_typepayments", type: "payments" },
   { from: "cf_status_item", to: "status_item", type: "text" },
@@ -147,6 +147,52 @@ const toNumber = (valor) => {
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
+const PHONE_COUNTRY_CODES = {
+  // Brasil, América Latina e Caribe
+  br: "55", ar: "54", bo: "591", cl: "56", co: "57", cr: "506",
+  cu: "53", do: "1", ec: "593", sv: "503", gt: "502", ht: "509",
+  hn: "504", jm: "1", mx: "52", ni: "505", pa: "507", py: "595",
+  pe: "51", pr: "1", uy: "598", ve: "58",
+  // Estados Unidos e Canadá
+  us: "1", ca: "1",
+  // Europa
+  al: "355", ad: "376", at: "43", by: "375", be: "32", ba: "387",
+  bg: "359", hr: "385", cy: "357", cz: "420", dk: "45", ee: "372",
+  fi: "358", fr: "33", de: "49", gr: "30", hu: "36", is: "354",
+  ie: "353", it: "39", xk: "383", lv: "371", li: "423", lt: "370",
+  lu: "352", mt: "356", md: "373", mc: "377", me: "382", nl: "31",
+  mk: "389", no: "47", pl: "48", pt: "351", ro: "40", ru: "7",
+  sm: "378", rs: "381", sk: "421", si: "386", es: "34", se: "46",
+  ch: "41", tr: "90", ua: "380", gb: "44", va: "39",
+};
+
+const getPhoneCode = (countryCode) => {
+  const normalizedCountry = String(countryCode || "").trim().toLowerCase();
+  if (!normalizedCountry) return null;
+  return PHONE_COUNTRY_CODES[normalizedCountry] || null;
+};
+
+// Normaliza telefone para E.164. No Brasil, garante DDD + 9 + número.
+const toPhone = (valor, country) => {
+  if (valor == null || valor === "") return null;
+  const originalValue = String(valor).trim();
+  const countryCode = getPhoneCode(country);
+  if (!countryCode) return originalValue;
+
+  let digits = originalValue.replace(/\D/g, "");
+  if (digits.startsWith(countryCode)) digits = digits.slice(countryCode.length);
+
+  if (countryCode === "55" && digits.length === 10) {
+    digits = `${digits.slice(0, 2)}9${digits.slice(2)}`;
+  }
+
+  const normalizedPhone = `+${countryCode}${digits}`;
+  console.log(
+    `[bondinhoCompraSiteSucesso] telefone normalizado | país=${country} | recebido=${originalValue} | enviado=${normalizedPhone}`,
+  );
+  return normalizedPhone;
+};
+
 const padNumber = (number) => String(number).padStart(2, "0");
 
 const parseDateComponents = (raw) => {
@@ -198,6 +244,9 @@ const toIdioma = (valor) => {
 
 const convertField = (field, payload) => {
   let valor = payload[field.from];
+  if (field.type === "phone") {
+    return toPhone(valor, payload.country);
+  }
   if (field.type === "idioma") {
     valor = payload.cf_language || payload.cf_lingua;
   }
@@ -235,6 +284,9 @@ const buildContactProperties = (fields, payload) => {
     const converted = convertField(field, payload);
     if (converted != null) properties[field.to] = converted;
   }
+  console.log(
+    `[bondinhoCompraSiteSucesso] propriedades do contato antes do PATCH: ${JSON.stringify(properties)}`,
+  );
   return properties;
 };
 
@@ -247,6 +299,9 @@ const buildDealProperties = (fields, payload) => {
   }
   // A brand da unidade de negócio é obrigatória no deal.
   properties["hs_all_assigned_business_unit_ids"] = ACTIVE.businessUnits.Bondinho;
+  console.log(
+    `[bondinhoCompraSiteSucesso] propriedades do deal antes do PATCH/POST: ${JSON.stringify(properties)}`,
+  );
   return properties;
 };
 
@@ -311,6 +366,9 @@ exports.main = async (event, callback) => {
   const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
   contactProperties["payload"] = JSON.stringify(payload, null, 2);
   const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
+  console.log(
+    `[bondinhoCompraSiteSucesso] payload final contato.phone=${contactProperties.phone} | deal.phone=${dealProperties.phone}`,
+  );
 
   try {
     // Lê a BU atual do contato e faz append da brand da marca.
