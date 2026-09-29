@@ -17,6 +17,10 @@ import {
   Alert,
 } from "@hubspot/ui-extensions";
 import { hubspot } from "@hubspot/ui-extensions";
+import {
+  createCategoryLabelMap,
+  getCategoryLabel,
+} from "../categoryOptions";
 import { useCrmProperties, useAssociations } from "@hubspot/ui-extensions/crm";
 
 hubspot.extend(({ context, runServerlessFunction, actions }) => (
@@ -69,6 +73,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
     "hubspot_owner_id",
   ]);
   const [portalId] = useState(context.portal.id);
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [categoryLabels, setCategoryLabels] = useState({});
   const isSandbox = portalId === CONFIG.sandbox.portalId;
   const envConfig = isSandbox ? CONFIG.sandbox : CONFIG.production;
@@ -113,11 +118,9 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
     runServerless({ name: "fetchDealPropertyOptions", parameters: {} })
       .then(({ response }) => {
         if (response?.status !== "SUCCESS") return;
-        setCategoryLabels(
-          Object.fromEntries(
-            response.options.map(({ value, label }) => [value, label]),
-          ),
-        );
+        const options = normalizePropertyOptions(response.options);
+        setCategoryOptions(options);
+        setCategoryLabels(createCategoryLabelMap(options));
       })
       .catch((error) => console.error("Erro ao carregar labels das categorias:", error));
   }, [runServerless]);
@@ -692,7 +695,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
     if (missingCategories.length > 0) {
       sendAlert({
         type: "warning",
-        message: `Selecione um desconto para: ${missingCategories.map(c => categoryLabels[c] || c).join(", ")}`,
+        message: `Selecione um desconto para: ${missingCategories.map((c) => getCategoryLabel(c, categoryLabels)).join(", ")}`,
       });
       return;
     }
@@ -862,15 +865,17 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
           { label: "Boleto", value: "BOLETO" },
         ];
 
-  const discountCategoryOptions = properties.categorias_aprovadas
-    ? properties.categorias_aprovadas
-        .split(";")
-        .filter((cat) => cat !== "" && cat !== "acao_comercial")
-        .map((cat) => ({
-           label: categoryLabels[cat] || cat,
-          value: cat,
-        }))
-    : [];
+  const discountCategoryValues = new Set(
+    properties.categorias_aprovadas
+      ? properties.categorias_aprovadas
+          .split(";")
+          .filter((cat) => cat !== "" && cat !== "acao_comercial")
+      : [],
+  );
+  const discountCategoryOptions = categoryOptions.filter(({ value }) =>
+    discountCategoryValues.has(value),
+  );
+
 
   const isAVista = isPagamentoAVista(selectedTipoPagamento);
 
@@ -968,7 +973,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
             {Object.entries(discountsByCategory).filter(([c]) => c !== "acao_comercial").map(([categoria, descontos]) => (
               <Flex key={categoria} direction="column" gap="small">
                 <Text format={{ fontWeight: "demibold" }}>
-                  {categoryLabels[categoria] || categoria}
+                  {getCategoryLabel(categoria, categoryLabels)}
                 </Text>
                 {descontos.length === 0 ? (
                   <Text format={{ fontSize: "small" }}>
@@ -1197,7 +1202,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
                       </TableCell>
                       <TableCell>
                         {selectedCategory.length > 0
-                          ? selectedCategory.map(cat => categoryLabels[cat] || cat).join(", ")
+                          ? selectedCategory.map((cat) => getCategoryLabel(cat, categoryLabels)).join(", ")
                           : "-"}
                       </TableCell>
                       <TableCell>

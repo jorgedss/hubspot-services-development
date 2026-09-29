@@ -17,6 +17,10 @@ import {
 } from "@hubspot/ui-extensions";
 import { hubspot } from "@hubspot/ui-extensions";
 import { useCrmProperties, useAssociations } from "@hubspot/ui-extensions/crm";
+import {
+  createCategoryLabelMap,
+  getCategoryLabel,
+} from "../categoryOptions";
 
 hubspot.extend(({ context, runServerlessFunction, actions }) => (
   <Extension
@@ -41,6 +45,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
   ]);
 
   const [portalId] = useState(context.portal.id);
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [categoryLabels, setCategoryLabels] = useState({});
   const [classObjectId, setClassObjectId] = useState("2-42181871"); // Default to production
 
@@ -79,11 +84,9 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
     runServerless({ name: "fetchDealPropertyOptions", parameters: {} })
       .then(({ response }) => {
         if (response?.status !== "SUCCESS") return;
-        setCategoryLabels(
-          Object.fromEntries(
-            response.options.map(({ value, label }) => [value, label]),
-          ),
-        );
+        const options = normalizePropertyOptions(response.options);
+        setCategoryOptions(options);
+        setCategoryLabels(createCategoryLabelMap(options));
       })
       .catch((error) => console.error("Erro ao carregar labels das categorias:", error));
   }, [runServerless]);
@@ -402,11 +405,15 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
     "Portador(a) de Diploma": "Portador(a) de Diploma",
   };
 
-  const discountCategoryOptions = properties.categorias_aprovadas
-    ? properties.categorias_aprovadas
-        .split(";")
-        .map((cat) => ({ label: categoryLabels[cat] || cat, value: cat }))
-    : [];
+  const discountCategoryValues = new Set(
+    properties.categorias_aprovadas
+      ? properties.categorias_aprovadas.split(";").filter(Boolean)
+      : [],
+  );
+  const discountCategoryOptions = categoryOptions.filter(({ value }) =>
+    discountCategoryValues.has(value),
+  );
+
   discountCategoryOptions.unshift({ label: "Sem desconto", value: "" });
 
   const formatCurrency = (value) => {
@@ -573,7 +580,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
                         <TableCell>{condition.descricao}</TableCell>
                         <TableCell>{nrParcelasCobranca}</TableCell>
                         <TableCell>{formatCurrency(valorParcela)}</TableCell>
-                        <TableCell>{selectedCategory || "-"}</TableCell>
+                        <TableCell>{getCategoryLabel(selectedCategory, categoryLabels) || "-"}</TableCell>
                         <TableCell>{discountName || "-"}</TableCell>
                         <TableCell>
                           {discountAmount}
@@ -706,7 +713,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
                   ) : (
                     <Flex direction="row" justify="between">
                       <Text>
-                        Categoria: {selectedCategory || "Sem desconto"}
+                        Categoria: {getCategoryLabel(selectedCategory, categoryLabels) || "Sem desconto"}
                       </Text>
                     </Flex>
                   )}
