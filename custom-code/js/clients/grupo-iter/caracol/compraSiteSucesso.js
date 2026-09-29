@@ -142,6 +142,9 @@ const toDateString = (raw) => {
 
 const convertField = (field, payload) => {
   let valor = payload[field.from];
+  if (field.type === "idioma") {
+    valor = payload.cf_language || payload.cf_lingua;
+  }
   if ((valor == null || valor === "") && field.fallbackFrom) {
     valor = payload[field.fallbackFrom];
   }
@@ -243,7 +246,7 @@ exports.main = async (event, callback) => {
   });
 
   const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
-  contactProperties["payload"] = JSON.stringify(payload);
+  contactProperties["payload"] = JSON.stringify(payload, null, 2);
   const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {

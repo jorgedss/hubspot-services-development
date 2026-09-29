@@ -70,7 +70,7 @@ exports.main = async (event, callback) => {
   });
 
   const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
-  contactProperties["payload"] = JSON.stringify(payload);
+  contactProperties["payload"] = JSON.stringify(payload, null, 2);
 
   // Data do último login: instante do recebimento do evento (agora), em ms UTC.
   contactProperties["data_do_ultimo_login"] = Date.now();

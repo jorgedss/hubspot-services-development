@@ -182,7 +182,10 @@ const toIdioma = (valor) => {
 };
 
 // Aplica a conversão de tipo para um campo simples (não-datetime).
-const convert = (field, valor) => {
+const convert = (field, valor, payload) => {
+  if (field.type === "idioma") {
+    valor = payload.cf_language || payload.cf_lingua;
+  }
   switch (field.type) {
     case "checkbox":
       return toBoolean(valor);
@@ -270,14 +273,14 @@ exports.main = async (event, callback) => {
     const converted =
       field.type === "datetime"
         ? convertDateTime(field, payload[field.from], payload[field.timeField])
-        : convert(field, payload[field.from]);
+        : convert(field, payload[field.from], payload);
     if (converted != null) properties[field.to] = converted;
   }
   if (!Object.keys(properties).length) {
     throw new Error("Nenhuma propriedade a mapear no payload.");
   }
 
-  properties["payload"] = JSON.stringify(payload);
+  properties["payload"] = JSON.stringify(payload, null, 2);
 
   try {
     // Lê a BU atual do contato e faz append da brand da marca.
