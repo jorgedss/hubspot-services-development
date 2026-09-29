@@ -60,7 +60,7 @@ const CONTACT_FIELDS = [
   { from: "city", to: "city", type: "text" },
   { from: "state", to: "state", type: "text" },
   { from: "country", to: "country", type: "text" },
-  { from: "cf_data_visita", to: "data_do_envio", type: "dateVisit" },
+  { from: "cf_data_pedido", to: "data_do_envio", type: "dateVisit" },
   { from: "cf_produto", to: "cf_produto", type: "text" },
   { from: "cf_order_payment_amount", to: "valor_carrinho_abandonado", type: "number" },
   { from: "cf_category", to: "cf_category", type: "text" },
@@ -80,7 +80,7 @@ const DEAL_FIELDS = [
   { from: "city", to: "cidade", type: "text" },
   { from: "state", to: "state", type: "text" },
   { from: "country", to: "country", type: "text" },
-  { from: "cf_data_visita", to: "data_do_envio", type: "dateVisit" },
+  { from: "cf_data_pedido", to: "data_do_envio", type: "dateVisit" },
   { from: "cf_produto", to: "cf_produto", type: "text" },
   { from: "cf_order_payment_amount", to: "amount", type: "number" },
   { from: "cf_category", to: "cf_category", type: "text" },
@@ -119,15 +119,13 @@ const toDateString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
-// cf_data_visita: DD/MM/YY ou DD/MM/YYYY -> YYYY-MM-DD. Quando o ano vem com
-// dois dígitos, assume 2000+ano (ex.: 26 -> 2026).
+// cf_data_pedido: DD-MM-YYYY -> YYYY-MM-DD.
 const toDateVisitString = (raw) => {
-  const match = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(String(raw || ""));
+  const match = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
   if (!match) return null;
   const day = Number(match[1]);
   const month = Number(match[2]);
-  let year = Number(match[3]);
-  if (year < 100) year += 2000;
+  const year = Number(match[3]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
