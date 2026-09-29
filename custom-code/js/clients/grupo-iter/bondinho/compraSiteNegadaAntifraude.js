@@ -73,6 +73,7 @@ const CONTACT_FIELDS = [
   { from: "cf_crianca", to: "cf_comprou_crianca", type: "childFlag" },
   { from: "cf_socio", to: "cf_socio", type: "booleanDropdown" },
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const DEAL_FIELDS = [
@@ -99,6 +100,7 @@ const DEAL_FIELDS = [
   { from: "cf_crianca", to: "cf_crianca", type: "childFlag" },
   { from: "cf_socio", to: "cf_socio", type: "booleanDropdown" },
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
@@ -186,6 +188,11 @@ const parseDateMmDdYyyy = (raw) => {
 };
 
 // Datetime -> timestamp ms (contato, propriedade datetime).
+const toDateTimeIsoMs = (raw) => {
+  const timestamp = Date.parse(String(raw || ""));
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
 const toDateTimeMs = (raw) => {
   const value = String(raw || "").trim();
   if (value.includes("/")) return parseDateMmDdYyyy(value);
@@ -264,6 +271,8 @@ const convertField = (field, payload) => {
       return toDateString(valor);
     case "datetime":
       return toDateTimeMs(valor);
+    case "datetimeISO":
+      return toDateTimeIsoMs(valor);
     case "dateTimeVisita":
       return toDateTimeDate(valor);
     default:

@@ -66,6 +66,7 @@ const CONTACT_FIELDS = [
   { from: "cf_quantity_restante", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_valor_restante", to: "cf_valor_pedido", type: "number" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const DEAL_FIELDS = [
@@ -86,6 +87,7 @@ const DEAL_FIELDS = [
   { from: "cf_quantity_restante", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_valor_restante", to: "amount", type: "number" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const toNumber = (valor) => {
@@ -115,6 +117,11 @@ const toDateTimeMs = (raw) => {
   const year = Number(match[3]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return Date.UTC(year, month - 1, day, 12, 0, 0) + 3 * 60 * 60 * 1000;
+};
+
+const toDateTimeIsoMs = (raw) => {
+  const timestamp = Date.parse(String(raw || ""));
+  return Number.isFinite(timestamp) ? timestamp : null;
 };
 
 // cf_lingua -> idioma (dropdown ingles/portugues/espanhol).
@@ -153,6 +160,8 @@ const convertField = (field, payload) => {
       return toDateString(valor);
     case "datetime":
       return toDateTimeMs(valor);
+    case "datetimeISO":
+      return toDateTimeIsoMs(valor);
     case "idioma":
       return toIdioma(valor);
     default:

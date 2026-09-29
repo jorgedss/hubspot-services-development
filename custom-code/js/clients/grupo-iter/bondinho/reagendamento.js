@@ -53,6 +53,7 @@ const CONTACT_FIELDS = [
   { from: "cf_product", to: "cf_produto", type: "text" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const DEAL_FIELDS = [
@@ -65,6 +66,7 @@ const DEAL_FIELDS = [
   { from: "cf_date_visit_expected", to: "data_da_visita", type: "date" },
   { from: "cf_data_visita_anterior", to: "cf_data_visita_anterior", type: "date" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const toNumber = (valor) => {
@@ -105,6 +107,11 @@ const toDateTimeMs = (rawDate, rawTime) => {
   return Date.UTC(year, month - 1, day, hour, minute, second) + 3 * 60 * 60 * 1000;
 };
 
+const toDateTimeIsoMs = (raw) => {
+  const timestamp = Date.parse(String(raw || ""));
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
 const convertField = (field, payload) => {
   let valor = payload[field.from];
   if ((valor == null || valor === "") && field.fallbackFrom) {
@@ -118,6 +125,8 @@ const convertField = (field, payload) => {
       return toDateString(valor);
     case "datetime":
       return toDateTimeMs(valor, payload[field.timeField]);
+    case "datetimeISO":
+      return toDateTimeIsoMs(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }

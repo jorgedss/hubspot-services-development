@@ -73,6 +73,7 @@ const CONTACT_FIELDS = [
   { from: "cf_nome_responsavel_legal", to: "nome_responsavel_legal", type: "text" },
   { from: "telefone_responsavel", to: "telefone_responsavel", type: "text" },
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const DEAL_FIELDS = [
@@ -102,6 +103,7 @@ const DEAL_FIELDS = [
   { from: "cf_nome_responsavel_legal", to: "nome_responsavel_legal", type: "text" },
   { from: "telefone_responsavel", to: "telefone_responsavel", type: "text" },
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
@@ -177,6 +179,11 @@ const toDateString = (raw) => {
 };
 
 // Data sem horário: usa 12:00 no fuso de São Paulo (UTC-3).
+const toDateTimeIsoMs = (raw) => {
+  const timestamp = Date.parse(String(raw || ""));
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
 const toDateTimeMs = (raw) => {
   const components = parseDateComponents(raw);
   if (!components) return null;
@@ -231,6 +238,8 @@ const convertField = (field, payload) => {
       return toDateString(valor);
     case "datetime":
       return toDateTimeMs(valor);
+    case "datetimeISO":
+      return toDateTimeIsoMs(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }

@@ -66,6 +66,7 @@ const CONTACT_FIELDS = [
   { from: "cf_category", to: "cf_category", type: "text" },
   { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const DEAL_FIELDS = [
@@ -86,6 +87,7 @@ const DEAL_FIELDS = [
   { from: "cf_category", to: "cf_category", type: "text" },
   { from: "cf_lingua", to: "idioma", type: "idioma" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "datetimeISO" },
 ];
 
 const toNumber = (valor) => {
@@ -120,6 +122,11 @@ const toDateString = (raw) => {
 };
 
 // cf_data_pedido: DD-MM-YYYY -> YYYY-MM-DD.
+const toDateTimeIsoMs = (raw) => {
+  const timestamp = Date.parse(String(raw || ""));
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
 const toDateVisitString = (raw) => {
   const match = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
   if (!match) return null;
@@ -169,6 +176,8 @@ const convertField = (field, payload) => {
       return toDateISOString(valor);
     case "dateVisit":
       return toDateVisitString(valor);
+    case "datetimeISO":
+      return toDateTimeIsoMs(valor);
     case "idioma":
       return toIdioma(valor);
     default:
