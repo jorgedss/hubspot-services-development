@@ -64,8 +64,6 @@ const DEAL_FIELDS = [
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_date_visit_expected", to: "data_da_visita", type: "date" },
   { from: "cf_data_visita_anterior", to: "cf_data_visita_anterior", type: "date" },
-  { from: "cf_product", to: "cf_produto", type: "text" },
-  { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_bilhetes", to: "cf_bilhetes", type: "text" },
 ];
 
@@ -99,7 +97,7 @@ const toDateTimeMs = (rawDate, rawTime) => {
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
   const timeMatch = /^\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(String(rawTime || ""));
-  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const hour = timeMatch ? Number(timeMatch[1]) : 12;
   const minute = timeMatch ? Number(timeMatch[2]) : 0;
   const second = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
   if (hour > 23 || minute > 59 || second > 59) return null;

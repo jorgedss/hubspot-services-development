@@ -57,7 +57,7 @@ const CONTACT_FIELDS = [
   { from: "mobile_phone", to: "phone", type: "text" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
-  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date" },
+  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "datetime" },
   { from: "cf_product", to: "cf_produto", type: "text" },
   { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_motivo_cancelamento", to: "cf_motivo_cancelamento", type: "text" },
@@ -106,6 +106,17 @@ const toDateString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
+// Data sem horário: usa 12:00 no fuso de São Paulo (UTC-3).
+const toDateTimeMs = (raw) => {
+  const match = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return Date.UTC(year, month - 1, day, 12, 0, 0) + 3 * 60 * 60 * 1000;
+};
+
 // cf_lingua -> idioma (dropdown ingles/portugues/espanhol).
 const toIdioma = (valor) => {
   if (valor == null || valor === "") return null;
@@ -137,6 +148,8 @@ const convertField = (field, payload) => {
       return toNumber(valor);
     case "date":
       return toDateString(valor);
+    case "datetime":
+      return toDateTimeMs(valor);
     case "idioma":
       return toIdioma(valor);
     default:

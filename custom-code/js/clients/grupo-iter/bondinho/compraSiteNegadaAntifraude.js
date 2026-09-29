@@ -177,7 +177,7 @@ const parseDateMmDdYyyy = (raw) => {
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
   const timeMatch = /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(String(raw || ""));
-  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const hour = timeMatch ? Number(timeMatch[1]) : 12;
   const minute = timeMatch ? Number(timeMatch[2]) : 0;
   const second = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
   if (hour > 23 || minute > 59 || second > 59) return null;
@@ -186,7 +186,25 @@ const parseDateMmDdYyyy = (raw) => {
 };
 
 // Datetime -> timestamp ms (contato, propriedade datetime).
-const toDateTimeMs = (raw) => parseDateMmDdYyyy(raw);
+const toDateTimeMs = (raw) => {
+  const value = String(raw || "").trim();
+  if (value.includes("/")) return parseDateMmDdYyyy(value);
+
+  const match = /^(\d{1,2})-(\d{1,2})-(\d{4})/.exec(value);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const timeMatch = /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(value);
+  const hour = timeMatch ? Number(timeMatch[1]) : 12;
+  const minute = timeMatch ? Number(timeMatch[2]) : 0;
+  const second = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
+  if (hour > 23 || minute > 59 || second > 59) return null;
+
+  return Date.UTC(year, month - 1, day, hour, minute, second) + 3 * 60 * 60 * 1000;
+};
 
 // Datetime -> date "YYYY-MM-DD" (deal, propriedade date pura).
 const toDateTimeDate = (raw) => {

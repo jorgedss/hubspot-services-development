@@ -63,7 +63,7 @@ const CONTACT_FIELDS = [
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_category", to: "cf_category", type: "text" },
   { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
-  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date", dateFormat: "DD-MM-YYYY" },
+  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "datetime" },
   { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_product", to: "cf_produto", type: "text" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
@@ -176,6 +176,14 @@ const toDateString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
+// Data sem horário: usa 12:00 no fuso de São Paulo (UTC-3).
+const toDateTimeMs = (raw) => {
+  const components = parseDateComponents(raw);
+  if (!components) return null;
+  const { day, month, year } = components;
+  return Date.UTC(year, month - 1, day, 12, 0, 0) + 3 * 60 * 60 * 1000;
+};
+
 // cf_lingua -> idioma (dropdown ingles/portugues/espanhol). Desconhecido ou
 // vazio retorna null (não grava).
 const toIdioma = (valor) => {
@@ -218,6 +226,8 @@ const convertField = (field, payload) => {
       return toIdioma(valor);
     case "date":
       return toDateString(valor);
+    case "datetime":
+      return toDateTimeMs(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
