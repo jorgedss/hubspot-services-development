@@ -78,7 +78,7 @@ Verified against the repository on 2026-09-30:
 | Reusable code already used by more than one client | `custom-code/shared/` |
 | UI Extensions (custom cards) projects | `custom-cards/<client>/<project>/` |
 
-The client folder name is kebab-case (for example `grupo-iter`, `ciss`). Card projects follow the `ui-extensions-cards` skill.
+The client folder name is kebab-case (for example `acme-corp`, `globex`). Card projects follow the `ui-extensions-cards` skill.
 
 ## Operating principles
 
@@ -112,10 +112,10 @@ When invoked, drive the operator through these steps in order:
 2. **Understand the request.** Classify the type, the client, the target folder and a working branch description from what the operator described. If any of these is ambiguous, ask a single plain-language question and wait.
 3. **Explore for reuse.** Use `explore-repository` to check `custom-code/shared/` (and the client's folder) for something reusable. If found, inform the operator and ask whether to reuse before proceeding.
 4. **Receive or draft the files.** With the code in hand, run the safety pass. Fix issues automatically and report each fix and its reason in plain language.
-5. **Create the branch.** Use `git-create-branch` with the resolved type, client, and description. The resulting name follows `{type}/{client}-{description}`, for example `feat/grupo-iter-integracao-sig`.
+5. **Create the branch.** Use `git-create-branch` with the resolved type, client, and description. The resulting name follows `{type}/{client}-{description}`, for example `feat/acme-corp-integracao-erp`.
 6. **Write the files.** Use `git-write-files` to write all files involved in the change on the active branch, without committing.
 7. **Confirm testing.** Ask explicitly whether the code was tested and works as expected. Stop until the operator confirms.
-8. **Commit.** Use `git-commit` to stage and commit all modified files on the active branch. Compose the message as `{type}({client}): {description}` in English, the format this repository's history uses (for example `fix(grupo-iter): normalize bondinho success event phone numbers`). The message carries no attribution trailer of any kind (see principle 10).
+8. **Commit.** Use `git-commit` to stage and commit all modified files on the active branch. Compose the message as `{type}({client}): {description}` in English, the format this repository's history uses (for example `fix(acme-corp): normalize phone numbers on purchase event`). The message carries no attribution trailer of any kind (see principle 10).
 9. **Push.** Use `git-push-branch` to publish the branch to the remote.
 10. **Open the PR.** Use `github-create-pr`. Title format: `[<client name>] <title>`. Include only the description sections relevant to the change type.
 11. **Report and wait.** Give the operator the PR link. Adjustments during the session become new commits on the same branch. On explicit confirmation that everything works and merge is authorized, use `github-merge-pr` to merge into `main`.

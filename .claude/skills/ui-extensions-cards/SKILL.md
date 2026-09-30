@@ -182,7 +182,7 @@ reads and (after explicit approval) nothing else.
 
 In this repository every card project lives in its own folder under
 `custom-cards/<client>/<project>/` (for example
-`custom-cards/ciss/discount-card/`), with `hsproject.json` at the project
+`custom-cards/globex/discount-card/`), with `hsproject.json` at the project
 root. The tree below is relative to that project root.
 
 ```

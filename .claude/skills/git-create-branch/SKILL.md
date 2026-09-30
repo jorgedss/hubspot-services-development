@@ -81,7 +81,7 @@ If the push fails, revert the local branch creation before returning: run `git -
 
 ## Expected output
 
-- On success: a confirmation that includes the created branch name (for example `feat/grupo-iter-integracao-sig`), that it exists on the remote, and that it is now the active branch.
+- On success: a confirmation that includes the created branch name (for example `feat/acme-corp-integracao-erp`), that it exists on the remote, and that it is now the active branch.
 - On `type` invalid: an error stating that `type` must be one of `feat`, `fix`, `chore`, `refactor`, `docs`, `enh`, and that no git operation ran.
 - On uncommitted changes: an error listing the files, with no branch created.
 - On `git pull origin main` failure: a descriptive error stating the base could not be updated, with no branch created.
@@ -107,11 +107,11 @@ Every error is a single clear, descriptive message identifying the defect and, w
 **Example 1, successful branch creation**
 ```
 type=feat
-client=Grupo Iter
-description=Integração SIG
+client=Acme Corp
+description=Integração ERP
 ```
 ```
-✓ Branch created and pushed: feat/grupo-iter-integracao-sig
+✓ Branch created and pushed: feat/acme-corp-integracao-erp
 ```
 
 **Example 2, invalid type**
@@ -127,11 +127,11 @@ Error: 'type' must be one of feat, fix, chore, refactor, docs, enh. Received 'bu
 **Example 3, branch already exists on the remote**
 ```
 type=fix
-client=CISS
+client=Globex
 description=renomeia coluna valor licenca
 ```
 ```
-Error: branch 'fix/ciss-renomeia-coluna-valor-licenca' already exists on the remote. Not overwritten.
+Error: branch 'fix/globex-renomeia-coluna-valor-licenca' already exists on the remote. Not overwritten.
 ```
 
 **Example 4, uncommitted changes in the working tree**

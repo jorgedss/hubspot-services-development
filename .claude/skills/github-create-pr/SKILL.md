@@ -68,7 +68,7 @@ If all the optional description sections are empty or absent, return an error as
 
 ### 5. Build the title
 
-Compose the PR title as `[{client}] {title}` using the received `client` and `title` verbatim, for example `[Grupo Iter] Integração SIG`.
+Compose the PR title as `[{client}] {title}` using the received `client` and `title` verbatim, for example `[Acme Corp] Integração ERP`.
 
 ### 6. Build the description
 
@@ -149,12 +149,12 @@ improvements=Reorders token refresh handling.
 
 **Example 2, successful PR, only some sections filled (empty sections are omitted)**
 ```
-client=CISS
+client=Globex
 title=Renomeia coluna valor licença
 fixes=Corrige o nome da coluna exibida no card de contratos.
 ```
 ```
-✓ PR opened: [CISS] Renomeia coluna valor licença
+✓ PR opened: [Globex] Renomeia coluna valor licença
   https://github.com/<owner>/hubspot-services-development/pull/45
 ```
 Body contains only the `## Correções` section, no empty sections.

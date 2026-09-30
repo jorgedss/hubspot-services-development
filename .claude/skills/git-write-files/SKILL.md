@@ -94,14 +94,14 @@ Every error is a single clear, descriptive message identifying the defect and, w
 **Example 1, successful write**
 ```
 files=[
-  { path: "custom-code/js/clients/grupo-iter/bondinho/loginSite.js", content: "..." },
-  { path: "custom-code/js/clients/grupo-iter/README.md", content: "..." }
+  { path: "custom-code/js/clients/acme-corp/checkout/purchaseSuccess.js", content: "..." },
+  { path: "custom-code/js/clients/acme-corp/README.md", content: "..." }
 ]
 ```
 ```
-✓ Wrote 2 files on branch feat/grupo-iter-integracao-sig:
-  - custom-code/js/clients/grupo-iter/bondinho/loginSite.js
-  - custom-code/js/clients/grupo-iter/README.md
+✓ Wrote 2 files on branch feat/acme-corp-integracao-erp:
+  - custom-code/js/clients/acme-corp/checkout/purchaseSuccess.js
+  - custom-code/js/clients/acme-corp/README.md
 ```
 
 **Example 2, empty file list**

@@ -85,10 +85,10 @@ Every error is a single clear, descriptive message identifying the defect and, w
 
 **Example 1, successful push of the active branch**
 ```
-(no parameters; active branch: feat/grupo-iter-integracao-sig, remote: origin)
+(no parameters; active branch: feat/acme-corp-integracao-erp, remote: origin)
 ```
 ```
-✓ Pushed branch feat/grupo-iter-integracao-sig to origin
+✓ Pushed branch feat/acme-corp-integracao-erp to origin
 ```
 
 **Example 2, active branch is main**

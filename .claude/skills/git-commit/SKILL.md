@@ -36,7 +36,7 @@ Strictly atomic: receives the message, verifies the branch and message, stages a
 
 | Parameter | Required | Values | Meaning |
 |---|---|---|---|
-| `message` | Yes | Conventional commits string | Commit message in the format `{type}({scope}): {description}` or `{type}: {description}`, where `type` is one of `feat`, `fix`, `chore`, `refactor`, `docs`, `enh`, and `scope` (optional) is the kebab-case client, for example `grupo-iter`. |
+| `message` | Yes | Conventional commits string | Commit message in the format `{type}({scope}): {description}` or `{type}: {description}`, where `type` is one of `feat`, `fix`, `chore`, `refactor`, `docs`, `enh`, and `scope` (optional) is the kebab-case client, for example `acme-corp`. |
 
 `message` must already be formatted by the caller. The skill validates the format but does not compose or rewrite the message.
 
@@ -57,7 +57,7 @@ Run `git -C <root> branch --show-current`. If the active branch is `main` (or th
 
 If any line of `message` mentions Claude, Claude Code, Anthropic or `noreply@anthropic.com` (case-insensitive), or contains a `Co-Authored-By` trailer, return an error naming the offending line and stop: Claude is never credited as a contributor in this repository.
 
-Validate that the first line of `message` matches `^(feat|fix|chore|refactor|docs|enh)(\([a-z0-9-]+\))?: \S.*$`: a type, an optional kebab-case scope in parentheses, then `: ` and a non-empty description. If it does not match, return an error that names the received message, states the expected format with the accepted types, and gives a concrete example, for example `feat(grupo-iter): add login flow`. Stop without staging or committing.
+Validate that the first line of `message` matches `^(feat|fix|chore|refactor|docs|enh)(\([a-z0-9-]+\))?: \S.*$`: a type, an optional kebab-case scope in parentheses, then `: ` and a non-empty description. If it does not match, return an error that names the received message, states the expected format with the accepted types, and gives a concrete example, for example `feat(acme-corp): add login flow`. Stop without staging or committing.
 
 ### 4. Verify there are modified files
 
@@ -106,13 +106,13 @@ Every error is a single clear, descriptive message identifying the defect and, w
 
 **Example 1, successful commit**
 ```
-message=feat(grupo-iter): add bondinho login-site event
+message=feat(acme-corp): add purchase success event
 ```
 ```
-✓ Committed on branch feat/grupo-iter-integracao-sig
-  hash: e39c2cb...
+✓ Committed on branch feat/acme-corp-integracao-erp
+  hash: 9b1f2c7...
   files:
-    - custom-code/js/clients/grupo-iter/bondinho/loginSite.js
+    - custom-code/js/clients/acme-corp/checkout/purchaseSuccess.js
 ```
 
 **Example 2, active branch is main**
@@ -128,12 +128,12 @@ Error: committing directly on 'main' is not allowed. Create a branch with git-cr
 message=update files
 ```
 ```
-Error: commit message 'update files' is not valid conventional commits. Use '{type}({scope}): {description}' or '{type}: {description}' with type in feat, fix, chore, refactor, docs, enh. Example: feat(grupo-iter): add login flow. Nothing was staged or committed.
+Error: commit message 'update files' is not valid conventional commits. Use '{type}({scope}): {description}' or '{type}: {description}' with type in feat, fix, chore, refactor, docs, enh. Example: feat(acme-corp): add login flow. Nothing was staged or committed.
 ```
 
 **Example 4, no modified files**
 ```
-message=docs(ciss): clarify usage
+message=docs(globex): clarify usage
 ```
 ```
 Error: there are no modified files to commit. An empty commit was not created.

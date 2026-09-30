@@ -80,19 +80,19 @@ If the OS reports no read permission for the requested file or directory, return
 **Example 1, list a directory:**
 ```
 action=list
-path=custom-code/js/clients/grupo-iter
+path=custom-code/js/clients/acme-corp
 ```
 ```
-[dir]  bondinho
-[dir]  c2rio
-[dir]  caracol
+[dir]  checkout
+[dir]  crm-sync
+[dir]  forms
 [file] README.md
 ```
 
 **Example 2, read a file:**
 ```
 action=read
-path=custom-code/js/clients/grupo-iter/README.md
+path=custom-code/js/clients/acme-corp/README.md
 ```
 ```
 (full content of the file)

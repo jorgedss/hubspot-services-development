@@ -38,20 +38,18 @@ hubspot-services-development/
 └── README.md
 ```
 
-Clientes hoje:
-- **grupo-iter** (`custom-code/js/clients/grupo-iter/`): integrações SIG por unidade de negócio (`bondinho`, `caracol`, `c2rio`). Cada script é uma action de custom code num workflow disparado por webhook, com o e-mail como chave de inscrição. O `README.md` da pasta lista eventos, scripts, business units, pipelines e endpoints: leia antes de mexer.
-- **ciss** (`custom-cards/ciss/`): três projetos HubSpot (`platformVersion` 2026.03, `srcDir: src`): `ciss-lancamento-contratos`, `discount-card`, `locacao-equipamentos-card`.
+Cada pasta de cliente pode ter um `README.md` próprio (eventos, scripts, pipelines, endpoints) e cada projeto de card tem `CLAUDE.md` e às vezes `AGENTS.md`. Leia a documentação da pasta do cliente antes de mexer nela.
 
 ## Convenções
 
 | Item | Regra | Exemplo |
 |---|---|---|
 | Nome de arquivo | inglês, camelCase | `fetchCepData.js`, `updateContactWebhookSig.js` |
-| Nome de pasta (cliente, unidade, projeto) | kebab-case | `grupo-iter`, `discount-card` |
-| Branch | `{tipo}/{cliente}-{descricao}`, criada a partir de `main` | `feat/grupo-iter-integracao-sig` |
+| Nome de pasta (cliente, unidade, projeto) | kebab-case | `acme-corp`, `discount-card` |
+| Branch | `{tipo}/{cliente}-{descricao}`, criada a partir de `main` | `feat/acme-corp-integracao-erp` |
 | Tipos aceitos | `feat`, `fix`, `chore`, `refactor`, `docs`, `enh` | |
-| Commit | `{tipo}({cliente}): {descrição em inglês}` | `fix(grupo-iter): normalize bondinho success event phone numbers` |
-| Título do PR | `[{Cliente}] {título}`, base `main` | `[Grupo Iter] Integração SIG` |
+| Commit | `{tipo}({cliente}): {descrição em inglês}` | `fix(acme-corp): normalize phone numbers on purchase event` |
+| Título do PR | `[{Cliente}] {título}`, base `main` | `[Acme Corp] Integração ERP` |
 | Corpo do PR | só as seções com conteúdo, nesta ordem: Contexto, Objetivo, Novas Features, Correções, Melhorias | |
 
 O README pede nomes de arquivo em kebab-case (`atualizar-stage-contrato.js`). Os arquivos existentes e o agente usam camelCase, e camelCase é a regra que vale. Nunca commite direto em `main`.
@@ -62,7 +60,7 @@ O README pede nomes de arquivo em kebab-case (`atualizar-stage-contrato.js`). Os
 - Envolva toda chamada externa em `try/catch` (JS) ou `try/except` (Python).
 - Valide a entrada antes de processar: nunca assuma que uma propriedade do HubSpot tem valor.
 - Deixe logs claros nos pontos críticos.
-- Todo script começa com um comentário de cabeçalho dizendo o que faz e em que contexto roda (veja `custom-code/js/clients/grupo-iter/bondinho/loginSite.js`).
+- Todo script começa com um comentário de cabeçalho dizendo o que faz e em que contexto roda (cliente, evento, gatilho do workflow, secret usada).
 - Nomes de variáveis descritivos: nada de `n`, `s`, `m`, `mDate`.
 - Antes de criar um script, confira `custom-code/shared/`.
 - Fale com o time de desenvolvimento antes de subir código que envolva integração externa, dados sensíveis ou lógica de negócio complexa.
@@ -71,17 +69,18 @@ O README pede nomes de arquivo em kebab-case (`atualizar-stage-contrato.js`). Os
 
 - Roda como action de custom code em workflow do HubSpot, em Node.js, com `axios`. O código no portal é colado à mão: o arquivo no repositório é a fonte da verdade, e uma mudança no portal volta para cá no mesmo PR.
 - O token vem de uma secret do portal lida por `process.env`.
-- Datas do SIG chegam como `DD-MM-YYYY`.
+- Formatos de entrada (datas, telefones, checkboxes) variam por integração: confirme no README da pasta do cliente, nunca presuma.
 
 ## Custom cards (projetos HubSpot)
 
 - Siga a skill `ui-extensions-cards`: autenticação só com `PRIVATE_APP_ACCESS_TOKEN`, `refreshObjectProperties()` depois de escrever, props só as que existem no `.d.ts` instalado, nada de import com `../` para fora do ponto de extensão.
 - Rode `hs project dev`, `hs project upload`, lint e format de dentro da pasta do projeto (onde fica o `hsproject.json`), nunca da raiz.
 - Se o MCP `HubSpotDev` estiver instalado, use as ferramentas dele antes de comandos manuais da CLI.
-- **Os três projetos da CISS são acoplados.** Leia o CLAUDE.md de cada projeto afetado antes de qualquer mudança:
-  - `discount-card` e `locacao-equipamentos-card` escrevem as mesmas propriedades de deal (`pending_discounts`, `resumo_descontos_aplicados`, `dealstage`, `proposta_aprovada`, `observacoes`, `discounts_history`), sempre por leitura, alteração e escrita. Mapas como `PIPELINE_THRESHOLDS`, `APPROVAL_STAGES` e `TIPO_EQUIPAMENTOS` existem em várias cópias que precisam ficar iguais.
-  - `ciss-lancamento-contratos` zera os snapshots de desconto (`DISCOUNT_STATE_TO_RESET`) que o `discount-card` usa.
-  - `discount-card/automation/` fica fora do `srcDir` e não sobe com `hs project upload`: é código de workflow colado à mão no portal. Os verificadores offline rodam com `node automation/desconto-decisao/verificar.js` e `node automation/verificacao/verificar-valores.js`.
+- **Projetos do mesmo cliente podem ser acoplados.** Antes de mudar um card, leia o CLAUDE.md de todos os projetos da pasta do cliente. Os acoplamentos que já existem são:
+  - dois apps escrevendo as mesmas propriedades de deal, que só podem ser gravadas com leitura, alteração e escrita, nunca sobrescritas;
+  - mapas de configuração copiados em vários arquivos, que precisam mudar juntos;
+  - um app que zera dados que outro app lê.
+- Uma pasta fora do `srcDir` (por exemplo `automation/`) não sobe com `hs project upload`. Ela guarda código de workflow que é colado à mão no portal, e uma mudança nela vale tanto quanto uma no app.
 
 ## Skills e agente disponíveis
 
