@@ -12,6 +12,9 @@ const axios = require("axios");
 // no pipeline 927835212 (Venda de Bilhete), estágio 1422040488 (Venda realizada).
 // A associação contato->deal é feita após gravar os dois registros.
 //
+// No CONTATO, a propriedade data_da_ultima_venda (datetime) recebe o instante
+// da execução do script, em timestamp em milissegundos (UTC).
+//
 // Cada unidade de negócio tem uma brand: o DEAL recebe a BU Caracol (4554143)
 // como valor único na propriedade hs_all_assigned_business_unit_ids. O contato
 // recebe a brand da marca via APPEND (a constante ACTIVE.businessUnits.Caracol
@@ -247,6 +250,9 @@ exports.main = async (event, callback) => {
 
   const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
   contactProperties["payload"] = JSON.stringify(payload, null, 2);
+
+  // Data da última venda: instante da execução do script, em ms UTC.
+  contactProperties["data_da_ultima_venda"] = Date.now();
   const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
 
   try {

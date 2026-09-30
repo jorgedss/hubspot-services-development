@@ -6,7 +6,8 @@
 // Contexto: action de custom code dentro de um workflow cujo trigger é um
 // webhook. A chave de inscriçao do workflow é o e-mail. O evento preenche o
 // CONTATO inscrito no workflow com as informações do add-to-cart, aplicando as
-// conversões de tipo.
+// conversões de tipo. A propriedade data_do_ultimo_add_to_cart (datetime)
+// recebe o instante da execução do script, em timestamp em milissegundos (UTC).
 //
 // O contato inscrito no workflow já fornece o record id em event.object.objectId
 // e é atualizado via PATCH na API v3 de contacts. A brand da marca (Caracol) é
@@ -281,6 +282,9 @@ exports.main = async (event, callback) => {
   }
 
   properties["payload"] = JSON.stringify(payload, null, 2);
+
+  // Data do último add-to-cart: instante da execução do script, em ms UTC.
+  properties["data_do_ultimo_add_to_cart"] = Date.now();
 
   try {
     // Lê a BU atual do contato e faz append da brand da marca.
