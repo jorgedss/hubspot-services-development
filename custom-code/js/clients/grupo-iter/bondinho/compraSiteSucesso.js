@@ -23,6 +23,8 @@ const axios = require("axios");
 //   - cf_accept_communication: Sim/SIM/1/true -> true; qualquer outro -> false.
 //   - cf_socio: true/sim/1 -> true; false/não/0 -> false (dropdown true/false).
 //   - cf_crianca: > 0 -> true; vazio/0/null -> false (tem criança ou não).
+//   - data_da_ultima_venda_bondinho: não vem do payload. Recebe a data e hora
+//     da execução do script (timestamp em ms), no contato e no deal.
 //
 // O token vem de ACTIVE.hubspotToken: secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG
 // em sandbox e HUBSPOT_TOKEN_INTEGRACAO_SIG em produção, nunca hardcoded.
@@ -377,6 +379,15 @@ exports.main = async (event, callback) => {
   const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
   contactProperties["payload"] = JSON.stringify(payload, null, 2);
   const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
+
+  // Data e hora da execução: marca a última venda do Bondinho no contato e no deal.
+  const lastSaleTimestamp = Date.now();
+  contactProperties["data_da_ultima_venda_bondinho"] = lastSaleTimestamp;
+  dealProperties["data_da_ultima_venda_bondinho"] = lastSaleTimestamp;
+  console.log(
+    `[bondinhoCompraSiteSucesso] data_da_ultima_venda_bondinho=${new Date(lastSaleTimestamp).toISOString()}`,
+  );
+
   console.log(
     `[bondinhoCompraSiteSucesso] payload final contato.phone=${contactProperties.phone} | deal.phone=${dealProperties.phone}`,
   );
