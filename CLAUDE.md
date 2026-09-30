@@ -70,7 +70,7 @@ O README pede nomes de arquivo em kebab-case (`atualizar-stage-contrato.js`). Os
 ## Custom code (workflow actions)
 
 - Roda como action de custom code em workflow do HubSpot, em Node.js, com `axios`. O código no portal é colado à mão: o arquivo no repositório é a fonte da verdade, e uma mudança no portal volta para cá no mesmo PR.
-- O token vem de uma secret do portal lida por `process.env`. No grupo-iter são `HUBSPOT_TOKEN_INTEGRACAO_SIG` (produção) e `HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG` (sandbox).
+- O token vem de uma secret do portal lida por `process.env`.
 - Datas do SIG chegam como `DD-MM-YYYY`.
 
 ## Custom cards (projetos HubSpot)
