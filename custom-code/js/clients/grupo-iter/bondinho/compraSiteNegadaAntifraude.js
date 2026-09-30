@@ -27,8 +27,8 @@ const axios = require("axios");
 //   - cf_data_pedido: DD-MM-YYYY -> YYYY-MM-DD.
 //   - cf_date_visit_expected: MM/DD/YYYY HH:mm:ss -> datetime/date.
 //
-// O token de autenticação vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
-// nunca hardcoded.
+// O token vem de ACTIVE.hubspotToken: secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG
+// em sandbox e HUBSPOT_TOKEN_INTEGRACAO_SIG em produção, nunca hardcoded.
 // ---------------------------------------------------------------------------
 
 // Ambiente da execução. Trocar manualmente para "production" no deploy.
@@ -38,10 +38,12 @@ const CONFIG = {
   sandbox: {
     businessUnits: { Bondinho: "4554145", Caracol: "4554143", C2Rio: "4554144" },
     pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+    hubspotToken: process.env.HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
   },
   production: {
     businessUnits: { Bondinho: "4292163", Caracol: "4275397", C2Rio: "4344366" },
     pipeline: { id: "927835212", stageWon: "1422040488", stageLost: "1422054714" },
+    hubspotToken: process.env.HUBSPOT_TOKEN_INTEGRACAO_SIG,
   },
 };
 
@@ -354,7 +356,7 @@ exports.main = async (event, callback) => {
   const hubspotClient = axios.create({
     baseURL: "https://api.hubapi.com",
     headers: {
-      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG}`,
+      Authorization: `Bearer ${ACTIVE.hubspotToken}`,
       "Content-Type": "application/json",
     },
     timeout: 18000,

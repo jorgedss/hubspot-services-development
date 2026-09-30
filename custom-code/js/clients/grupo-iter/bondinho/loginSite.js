@@ -12,9 +12,24 @@ const axios = require("axios");
 // data_do_ultimo_login (datetime) recebe o instante do recebimento do evento,
 // em timestamp em milissegundos (UTC).
 //
-// Este evento não atualiza a business unit do contato. O token vem da secret
-// HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG, nunca hardcoded.
+// Este evento não atualiza a business unit do contato.
+// O token vem de ACTIVE.hubspotToken: secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG
+// em sandbox e HUBSPOT_TOKEN_INTEGRACAO_SIG em produção, nunca hardcoded.
 // ---------------------------------------------------------------------------
+
+// Ambiente da execução. Trocar manualmente para "production" no deploy.
+const ENV = "sandbox";
+
+const CONFIG = {
+  sandbox: {
+    hubspotToken: process.env.HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG,
+  },
+  production: {
+    hubspotToken: process.env.HUBSPOT_TOKEN_INTEGRACAO_SIG,
+  },
+};
+
+const ACTIVE = CONFIG[ENV];
 
 const CONTACT_FIELDS = [
   { from: "conversion_identifier", to: "conversion_identifier", type: "text" },
@@ -63,7 +78,7 @@ exports.main = async (event, callback) => {
   const hubspotClient = axios.create({
     baseURL: "https://api.hubapi.com",
     headers: {
-      Authorization: `Bearer ${process.env.HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG}`,
+      Authorization: `Bearer ${ACTIVE.hubspotToken}`,
       "Content-Type": "application/json",
     },
     timeout: 18000,
