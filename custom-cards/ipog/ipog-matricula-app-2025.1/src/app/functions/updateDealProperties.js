@@ -222,7 +222,10 @@ exports.main = async (context = {}) => {
       { headers: { Authorization: `Bearer ${process.env.HUBSPOT_API_KEY}` } },
     );
     const categoriaMap = Object.fromEntries(
-      (propertyResponse.data.options || []).map(({ value, label }) => [value, label]),
+      (propertyResponse.data.options || []).map(({ value, label }) => [
+        value,
+        label,
+      ]),
     );
     const categoriaLabel = selectedCategory
       .split(";")

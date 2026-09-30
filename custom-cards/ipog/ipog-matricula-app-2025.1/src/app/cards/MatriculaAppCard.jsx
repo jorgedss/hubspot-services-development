@@ -74,6 +74,21 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
   const envConfig = isSandbox ? CONFIG.sandbox : CONFIG.production;
   const classObjectId = envConfig.classObjectId;
 
+  useEffect(() => {
+    runServerless({ name: "fetchDealPropertyOptions", parameters: {} })
+      .then(({ response }) => {
+        if (response?.status !== "SUCCESS") return;
+        setCategoryLabels(
+          Object.fromEntries(
+            response.options.map(({ value, label }) => [value, label]),
+          ),
+        );
+      })
+      .catch((error) =>
+        console.error("Erro ao carregar labels das categorias:", error),
+      );
+  }, [runServerless]);
+
   const { results: contactResults } = useAssociations(
     {
       toObjectType: "0-1",
@@ -108,19 +123,6 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
       propertiesToFormat: "all",
     },
   );
-
-  useEffect(() => {
-    runServerless({ name: "fetchDealPropertyOptions", parameters: {} })
-      .then(({ response }) => {
-        if (response?.status !== "SUCCESS") return;
-        setCategoryLabels(
-          Object.fromEntries(
-            response.options.map(({ value, label }) => [value, label]),
-          ),
-        );
-      })
-      .catch((error) => console.error("Erro ao carregar labels das categorias:", error));
-  }, [runServerless]);
 
   // Extrai o primeiro contato associado, mapeando toObjectId para id
   const associatedContact = contactResults?.[0]
@@ -867,7 +869,7 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
         .split(";")
         .filter((cat) => cat !== "" && cat !== "acao_comercial")
         .map((cat) => ({
-           label: categoryLabels[cat] || cat,
+          label: categoryLabels[cat] || cat,
           value: cat,
         }))
     : [];
@@ -1385,3 +1387,4 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
     </Card>
   );
 };
+

@@ -369,8 +369,8 @@ const DisciplinasModal = ({
         </Alert>
       ) : !data?.disciplinas?.length ? (
         <Text>
-          Nenhuma disciplina retornada para esta turma. Informe a data de início
-          manualmente no campo "Data de Início do Aluno".
+          Nenhuma disciplina retornada para esta turma. Não há datas de início
+          disponíveis para seleção.
         </Text>
       ) : (
         <Flex direction="column" gap="small">
@@ -1609,10 +1609,7 @@ const CheckoutCard = ({ context, runServerless, actions }) => {
                   name="studentStartDate"
                   required={true}
                   value={studentStartDate}
-                  min={minDate}
-                  onChange={(value) =>
-                    setStudentStartDate(normalizeDateObject(value))
-                  }
+                  readOnly={true}
                 />
                 <LoadingButton
                   type="button"

@@ -45,6 +45,21 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
   const [classObjectId, setClassObjectId] = useState("2-42181871"); // Default to production
 
   useEffect(() => {
+    runServerless({ name: "fetchDealPropertyOptions", parameters: {} })
+      .then(({ response }) => {
+        if (response?.status !== "SUCCESS") return;
+        setCategoryLabels(
+          Object.fromEntries(
+            response.options.map(({ value, label }) => [value, label]),
+          ),
+        );
+      })
+      .catch((error) =>
+        console.error("Erro ao carregar labels das categorias:", error),
+      );
+  }, [runServerless]);
+
+  useEffect(() => {
     if (portalId === 51406295) {
       setClassObjectId("2-61647973"); // Sandbox
       setQuoteTemplateId("567931027464"); // Sandbox
@@ -75,18 +90,6 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
 
   const [selectedCategory, setSelectedCategory] = useState("");
 
-  useEffect(() => {
-    runServerless({ name: "fetchDealPropertyOptions", parameters: {} })
-      .then(({ response }) => {
-        if (response?.status !== "SUCCESS") return;
-        setCategoryLabels(
-          Object.fromEntries(
-            response.options.map(({ value, label }) => [value, label]),
-          ),
-        );
-      })
-      .catch((error) => console.error("Erro ao carregar labels das categorias:", error));
-  }, [runServerless]);
   const [graduationPlanData, setGraduationPlanData] = useState(null);
   const [fetchedDiscount, setFetchedDiscount] = useState(null);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
@@ -736,3 +739,4 @@ const Extension = ({ context, runServerless, sendAlert, actions }) => {
     </Card>
   );
 };
+
