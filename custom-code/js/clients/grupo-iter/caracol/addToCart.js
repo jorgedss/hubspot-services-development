@@ -140,17 +140,18 @@ const toDateISOString = (raw) => {
 
 // Combina uma data com um horário "HH:mm:ss" (ambos em horário local do
 // cliente) e devolve timestamp em milissegundos (UTC), o formato que a HubSpot
-// aceita para propriedades "date and time". Retorna null se a data estiver
-// ausente/ilegível.
+// aceita para propriedades "date and time". Sem horário (ou horário ilegível),
+// fixa 12:00 de Brasília, evitando mudança de dia na exibição. Retorna null se
+// a data estiver ausente/ilegível.
 const toDateTimeMs = (rawDate, rawTime, dateFormat) => {
   const components = parseDateComponents(rawDate, dateFormat);
   if (!components) return null;
   const { month, day, year } = components;
 
   const timeMatch = /^\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/.exec(
-    String(rawTime || "00:00:00"),
+    String(rawTime || ""),
   );
-  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const hour = timeMatch ? Number(timeMatch[1]) : 12;
   const minute = timeMatch ? Number(timeMatch[2]) : 0;
   const second = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
 

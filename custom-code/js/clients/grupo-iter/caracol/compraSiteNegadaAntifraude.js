@@ -24,6 +24,8 @@ const axios = require("axios");
 //     "idioma"). Desconhecido não é gravado.
 //   - cf_product: array -> JSON string na propriedade cf_produto.
 //   - cf_data_pedido e cf_date_visit_expected: DD-MM-YYYY -> YYYY-MM-DD.
+//   - cf_data_visita (contato, datetime): DD-MM-YYYY com hora fixa 12:00 de
+//     Brasília (UTC-3), em timestamp ms. data_da_visita (deal) segue date.
 //
 // O token vem da secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG, nunca hardcoded.
 // ---------------------------------------------------------------------------
@@ -62,7 +64,7 @@ const CONTACT_FIELDS = [
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_category", to: "cf_category", type: "text" },
   { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
-  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "date" },
+  { from: "cf_date_visit_expected", to: "cf_data_visita", type: "datetime" },
   { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "json" },
@@ -144,6 +146,18 @@ const toDateString = (raw) => {
   return `${year}-${padNumber(month)}-${padNumber(day)}`;
 };
 
+// Data sem horário para propriedade datetime: fixa 12:00 no fuso de São Paulo
+// (UTC-3), evitando mudança de dia quando a HubSpot exibe a propriedade.
+const toDateTimeMs = (raw) => {
+  const match = /^\s*(\d{1,2})-(\d{1,2})-(\d{4})/.exec(String(raw || ""));
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return Date.UTC(year, month - 1, day, 12, 0, 0) + 3 * 60 * 60 * 1000;
+};
+
 const convertField = (field, payload) => {
   let valor = payload[field.from];
   if (field.type === "idioma") {
@@ -164,6 +178,8 @@ const convertField = (field, payload) => {
       return toIdioma(valor);
     case "date":
       return toDateString(valor);
+    case "datetime":
+      return toDateTimeMs(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
