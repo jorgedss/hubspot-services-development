@@ -37,6 +37,9 @@ const ACTIVE = CONFIG[ENV];
 // são convertidas para timestamp UTC na função toDateTimeMs. As datas "só data"
 // são normalizadas para YYYY-MM-DD sem deslocamento de fuso.
 
+// cf_data_hora_visita (datetime) traz data e hora da visita e é gravada como
+// timestamp ms pela função toVisitDateTimeMs (horário de Brasília sem fuso).
+
 // Mapeamento (payload -> propriedade do contato na HubSpot) com a conversão de
 // tipo correspondente. Campos que no payload são strings numéricas/bool são
 // convertidos antes de gravar.
@@ -73,6 +76,7 @@ const FIELD_MAP = [
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_categoria", to: "cf_categoria", type: "text" },
   { from: "cf_nome_produto", to: "cf_nome_produto", type: "text" },
+  { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "visitDateTime" },
 ];
 
 const FALSE_WORDS = new Set(["false", "0", "nao", "não"]);
@@ -162,6 +166,33 @@ const toDateTimeMs = (rawDate, rawTime, dateFormat) => {
   return Date.UTC(year, month - 1, day, hour, minute, second) + 3 * 60 * 60 * 1000;
 };
 
+// cf_data_hora_visita (datetime, contato). Aceita YYYY-MM-DD ou
+// DD-MM-YYYY (hífen ou barra), com horário opcional HH:mm[:ss]. Com fuso
+// explícito (Z ou ±HH:mm), usa o instante como veio; sem fuso, o horário é o de
+// Brasília (UTC-3). Sem horário, fixa 12:00 de Brasília, evitando mudança de
+// dia na exibição. Valor ilegível retorna null (não grava).
+const toVisitDateTimeMs = (raw) => {
+  if (raw == null || raw === "") return null;
+  const text = String(raw).trim();
+  if (/[T\s]\d{1,2}:\d{2}.*(Z|[+-]\d{2}:?\d{2})$/i.test(text)) {
+    const timestamp = Date.parse(text.replace(" ", "T"));
+    return Number.isFinite(timestamp) ? timestamp : null;
+  }
+  const isoDateMatch = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(text);
+  const brDateMatch = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/.exec(text);
+  if (!isoDateMatch && !brDateMatch) return null;
+  const year = Number(isoDateMatch ? isoDateMatch[1] : brDateMatch[3]);
+  const month = Number(isoDateMatch ? isoDateMatch[2] : brDateMatch[2]);
+  const day = Number(isoDateMatch ? isoDateMatch[3] : brDateMatch[1]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const timeMatch = /[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(text);
+  const hour = timeMatch ? Number(timeMatch[1]) : 12;
+  const minute = timeMatch ? Number(timeMatch[2]) : 0;
+  const second = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
+  if (hour > 23 || minute > 59 || second > 59) return null;
+  return Date.UTC(year, month - 1, day, hour, minute, second) + 3 * 60 * 60 * 1000;
+};
+
 // cf_lingua -> idioma (dropdown ingles/portugues/espanhol). Desconhecido ou
 // vazio retorna null (não grava).
 const toIdioma = (valor) => {
@@ -201,6 +232,8 @@ const convert = (field, valor, payload) => {
       return toDateISOString(valor);
     case "idioma":
       return toIdioma(valor);
+    case "visitDateTime":
+      return toVisitDateTimeMs(valor);
     default:
       return valor == null || valor === "" ? null : String(valor);
   }
