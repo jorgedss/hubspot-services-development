@@ -33,7 +33,8 @@ custom-code/js/clients/grupo-iter/
 ├── c2rio/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
-│   └── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
+│   ├── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
+│   └── carrinhoAbandonado.js         # evento carrinho-abandonado
 └── README.md
 ```
 
