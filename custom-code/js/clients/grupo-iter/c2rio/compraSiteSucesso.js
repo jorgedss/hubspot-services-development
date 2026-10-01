@@ -88,7 +88,7 @@ const DEAL_FIELDS = [
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_category", to: "cf_category", type: "text" },
-  { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_bondinho", type: "acceptance" },
+  { from: "cf_accept_communication", to: "aceite_receber_comunicacoes_c2rio", type: "acceptance" },
   { from: "cf_date_visit_expected", to: "data_da_visita", type: "date" },
   { from: "cf_lingua", to: "idioma", type: "idioma" },
   { from: "cf_agent", to: "cf_agent", type: "text" },
