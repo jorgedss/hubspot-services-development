@@ -78,6 +78,7 @@ const CONTACT_FIELDS = [
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "json" },
   { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "visitDateTime" },
+  { from: "cf_nome_do_passeio", to: "cf_nome_do_passeio", type: "text" },
 ];
 
 const DEAL_FIELDS = [
@@ -102,6 +103,7 @@ const DEAL_FIELDS = [
   { from: "cf_brand_card", to: "cf_brand_card", type: "text" },
   { from: "cf_product", to: "cf_produto", type: "json" },
   { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "visitDateTime" },
+  { from: "cf_nome_do_passeio", to: "cf_nome_do_passeio", type: "text" },
 ];
 
 const TRUE_WORDS = new Set(["true", "sim", "s", "y", "yes", "1"]);

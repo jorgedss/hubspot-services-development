@@ -71,6 +71,7 @@ const CONTACT_FIELDS = [
   { from: "cf_lingua", to: "idioma_cloned", type: "idioma" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "visitDateTime" },
+  { from: "cf_nome_do_passeio", to: "cf_nome_do_passeio", type: "text" },
 ];
 
 const DEAL_FIELDS = [
@@ -92,6 +93,7 @@ const DEAL_FIELDS = [
   { from: "cf_lingua", to: "idioma", type: "idioma" },
   { from: "cf_quantity", to: "quantidade_de_bilhetes", type: "number" },
   { from: "cf_data_hora_visita", to: "cf_data_hora_visita", type: "visitDateTime" },
+  { from: "cf_nome_do_passeio", to: "cf_nome_do_passeio", type: "text" },
 ];
 
 const toNumber = (valor) => {
