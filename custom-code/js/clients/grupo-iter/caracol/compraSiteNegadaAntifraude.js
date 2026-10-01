@@ -13,6 +13,9 @@ const axios = require("axios");
 // no pipeline 927835212 (Venda de Bilhete), estágio 1422054714 (Perdido). A
 // associação contato->deal é feita após gravar os dois registros.
 //
+// Deal que já está em Venda realizada (1422040488) não muda de estágio nem
+// recebe motivo de perda: só as demais propriedades são atualizadas.
+//
 // Cada unidade de negócio tem uma brand: o DEAL recebe a BU Caracol (4554143)
 // como valor único na propriedade hs_all_assigned_business_unit_ids. O contato
 // recebe a brand da marca via APPEND (a constante ACTIVE.businessUnits.Caracol
@@ -390,17 +393,27 @@ exports.main = async (event, callback) => {
       }),
     );
 
-    const dealId = await withStep("resolverDeal", () =>
+    // Resolve o deal pela propriedade booking (id e estágio atual).
+    const existingDeal = await withStep("resolverDeal", () =>
       findDealByBooking(bookingKey, hubspotClient),
     );
+    const dealId = existingDeal ? existingDeal.id : null;
 
-    // Deal da recusa: sempre na etapa Perdido, com motivo de perda.
-    const dealToWrite = {
-      ...dealProperties,
-      pipeline: ACTIVE.pipeline.id,
-      dealstage: ACTIVE.pipeline.stageLost,
-      motivo_de_perda: LOSS_REASON,
-    };
+    // Deal já em Venda realizada não muda de estágio nem recebe motivo de perda:
+    // só as demais propriedades são atualizadas. Deal novo ou em outro estágio
+    // vai para Perdido com o motivo de perda.
+    const keepCurrentStage = Boolean(existingDeal) && existingDeal.stage === ACTIVE.pipeline.stageWon;
+    let dealToWrite;
+    if (keepCurrentStage) {
+      dealToWrite = { ...dealProperties };
+    } else {
+      dealToWrite = {
+        ...dealProperties,
+        pipeline: ACTIVE.pipeline.id,
+        dealstage: ACTIVE.pipeline.stageLost,
+        motivo_de_perda: LOSS_REASON,
+      };
+    }
 
     let resolvedDealId;
     if (dealId) {
@@ -421,7 +434,7 @@ exports.main = async (event, callback) => {
     );
 
     console.log(
-      `[caracolCompraSiteNegadaAntifraude] contato ${contactId} atualizado; deal ${resolvedDealId} na etapa Perdido`,
+      `[caracolCompraSiteNegadaAntifraude] contato ${contactId} atualizado; deal ${resolvedDealId} ${keepCurrentStage ? "mantido em Venda realizada" : "na etapa Perdido"}`,
     );
 
     return respond({
@@ -442,11 +455,11 @@ const findDealByBooking = async (bookingKey, hubspotClient) => {
     filterGroups: [
       { filters: [{ propertyName: "booking", operator: "EQ", value: bookingKey }] },
     ],
-    properties: ["booking"],
+    properties: ["booking", "dealstage"],
     limit: 1,
   });
   const deal = (data.results || [])[0];
-  return deal ? deal.id : null;
+  return deal ? { id: deal.id, stage: deal.properties?.dealstage || null } : null;
 };
 
 const createDeal = async (properties, hubspotClient) => {
