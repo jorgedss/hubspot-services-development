@@ -24,6 +24,8 @@ const axios = require("axios");
 // Regras de conversão específicas deste evento:
 //   - cf_data_de_nascimento: DD/MM/YYYY -> YYYY-MM-DD.
 //   - cf_data_visita: DD/MM/YY (ou DD/MM/YYYY) -> YYYY-MM-DD.
+//   - data_do_ultimo_carrinho_abandonado_bondinho: não vem do payload. Recebe a
+//     data e hora da execução do script (timestamp em ms), no contato e no deal.
 //
 // O token vem de ACTIVE.hubspotToken: secret HUBSPOT_TOKEN_SANDBOX_INTEGRACAO_SIG
 // em sandbox e HUBSPOT_TOKEN_INTEGRACAO_SIG em produção, nunca hardcoded.
@@ -263,6 +265,15 @@ exports.main = async (event, callback) => {
   const contactProperties = buildContactProperties(CONTACT_FIELDS, payload);
   contactProperties["payload"] = JSON.stringify(payload, null, 2);
   const dealProperties = buildDealProperties(DEAL_FIELDS, payload);
+
+  // Data e hora da execução: marca o último carrinho abandonado do Bondinho no
+  // contato e no deal.
+  const lastAbandonedCartTimestamp = Date.now();
+  contactProperties["data_do_ultimo_carrinho_abandonado_bondinho"] = lastAbandonedCartTimestamp;
+  dealProperties["data_do_ultimo_carrinho_abandonado_bondinho"] = lastAbandonedCartTimestamp;
+  console.log(
+    `[bondinhoCarrinhoAbandonado] data_do_ultimo_carrinho_abandonado_bondinho=${new Date(lastAbandonedCartTimestamp).toISOString()}`,
+  );
 
   try {
     // Lê a BU atual do contato e faz append da brand da marca.
