@@ -64,7 +64,7 @@ const DEAL_FIELDS = [
   { from: "traffic_medium", to: "utm_medium", type: "text" },
   { from: "traffic_source", to: "utm_source", type: "text" },
   { from: "email", to: "email_do_contato_principal", type: "text" },
-  { from: "name", to: "dealname", type: "text", fallbackFrom: "cf_id_pedido" },
+  { from: "cf_id_pedido", to: "dealname", type: "text", fallbackFrom: "name" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
   { from: "cf_date_visit_expected", to: "data_da_visita", type: "date" },
   { from: "cf_data_visita_anterior", to: "cf_data_visita_anterior", type: "date" },
