@@ -178,17 +178,37 @@ const getPhoneCode = (countryCode) => {
   return PHONE_COUNTRY_CODES[normalizedCountry] || null;
 };
 
-// Normaliza telefone para E.164. No Brasil, garante DDD + 9 + número.
+// Normaliza telefone para E.164: + código do país + DDD + número.
+// O país vem do campo country do payload (sigla de duas letras, ex.: "br").
+// Sem país reconhecido, um número sem "+" e com 10 ou 11 dígitos é tratado
+// como brasileiro (+55); qualquer outro valor é gravado como chegou. O código do
+// país só é removido do início quando o número tem dígitos a mais, para não
+// confundir o DDD 55 (RS) com o código do Brasil. No Brasil, um número de 10
+// dígitos (DDD + 8) recebe o 9 depois do DDD.
+const BRAZIL_PHONE_CODE = "55";
+
 const toPhone = (valor, country) => {
   if (valor == null || valor === "") return null;
   const originalValue = String(valor).trim();
-  const countryCode = getPhoneCode(country);
-  if (!countryCode) return originalValue;
-
   let digits = originalValue.replace(/\D/g, "");
-  if (digits.startsWith(countryCode)) digits = digits.slice(countryCode.length);
+  let countryCode = getPhoneCode(country);
 
-  if (countryCode === "55" && digits.length === 10) {
+  if (!countryCode) {
+    const hasForeignPrefix = originalValue.startsWith("+");
+    if (hasForeignPrefix || (digits.length !== 10 && digits.length !== 11)) {
+      console.log(
+        `[bondinhoCompraSiteSucesso] telefone sem país reconhecido, gravado como recebido | país=${country} | recebido=${originalValue}`,
+      );
+      return originalValue;
+    }
+    countryCode = BRAZIL_PHONE_CODE;
+  } else if (digits.startsWith(countryCode)) {
+    const isBrazil = countryCode === BRAZIL_PHONE_CODE;
+    const hasCountryPrefix = isBrazil ? digits.length >= 12 : true;
+    if (hasCountryPrefix) digits = digits.slice(countryCode.length);
+  }
+
+  if (countryCode === BRAZIL_PHONE_CODE && digits.length === 10) {
     digits = `${digits.slice(0, 2)}9${digits.slice(2)}`;
   }
 

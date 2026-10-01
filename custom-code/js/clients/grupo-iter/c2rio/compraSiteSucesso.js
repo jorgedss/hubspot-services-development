@@ -55,7 +55,7 @@ const CONTACT_FIELDS = [
   { from: "state", to: "state", type: "text" },
   { from: "city", to: "city", type: "text" },
   { from: "country", to: "country", type: "text" },
-  { from: "mobile_phone", to: "phone", type: "text" },
+  { from: "mobile_phone", to: "phone", type: "phone" },
   { from: "cf_valor_pedido", to: "cf_valor_pedido", type: "number" },
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
@@ -79,7 +79,7 @@ const DEAL_FIELDS = [
   { from: "state", to: "state", type: "text" },
   { from: "city", to: "cidade", type: "text" },
   { from: "country", to: "country", type: "text" },
-  { from: "mobile_phone", to: "phone", type: "text" },
+  { from: "mobile_phone", to: "phone", type: "phone" },
   { from: "cf_valor_pedido", to: "amount", type: "number" },
   { from: "cf_data_pedido", to: "cf_data_pedido", type: "date" },
   { from: "cf_id_pedido", to: "booking", type: "text" },
@@ -149,6 +149,72 @@ const toIdioma = (valor) => {
   return null;
 };
 
+const PHONE_COUNTRY_CODES = {
+  // Brasil, América Latina e Caribe
+  br: "55", ar: "54", bo: "591", cl: "56", co: "57", cr: "506",
+  cu: "53", do: "1", ec: "593", sv: "503", gt: "502", ht: "509",
+  hn: "504", jm: "1", mx: "52", ni: "505", pa: "507", py: "595",
+  pe: "51", pr: "1", uy: "598", ve: "58",
+  // Estados Unidos e Canadá
+  us: "1", ca: "1",
+  // Europa
+  al: "355", ad: "376", at: "43", by: "375", be: "32", ba: "387",
+  bg: "359", hr: "385", cy: "357", cz: "420", dk: "45", ee: "372",
+  fi: "358", fr: "33", de: "49", gr: "30", hu: "36", is: "354",
+  ie: "353", it: "39", xk: "383", lv: "371", li: "423", lt: "370",
+  lu: "352", mt: "356", md: "373", mc: "377", me: "382", nl: "31",
+  mk: "389", no: "47", pl: "48", pt: "351", ro: "40", ru: "7",
+  sm: "378", rs: "381", sk: "421", si: "386", es: "34", se: "46",
+  ch: "41", tr: "90", ua: "380", gb: "44", va: "39",
+};
+
+const getPhoneCode = (countryCode) => {
+  const normalizedCountry = String(countryCode || "").trim().toLowerCase();
+  if (!normalizedCountry) return null;
+  return PHONE_COUNTRY_CODES[normalizedCountry] || null;
+};
+
+// Normaliza telefone para E.164: + código do país + DDD + número.
+// O país vem do campo country do payload (sigla de duas letras, ex.: "br").
+// Sem país reconhecido, um número sem "+" e com 10 ou 11 dígitos é tratado
+// como brasileiro (+55); qualquer outro valor é gravado como chegou. O código do
+// país só é removido do início quando o número tem dígitos a mais, para não
+// confundir o DDD 55 (RS) com o código do Brasil. No Brasil, um número de 10
+// dígitos (DDD + 8) recebe o 9 depois do DDD.
+const BRAZIL_PHONE_CODE = "55";
+
+const toPhone = (valor, country) => {
+  if (valor == null || valor === "") return null;
+  const originalValue = String(valor).trim();
+  let digits = originalValue.replace(/\D/g, "");
+  let countryCode = getPhoneCode(country);
+
+  if (!countryCode) {
+    const hasForeignPrefix = originalValue.startsWith("+");
+    if (hasForeignPrefix || (digits.length !== 10 && digits.length !== 11)) {
+      console.log(
+        `[c2rioCompraSiteSucesso] telefone sem país reconhecido, gravado como recebido | país=${country} | recebido=${originalValue}`,
+      );
+      return originalValue;
+    }
+    countryCode = BRAZIL_PHONE_CODE;
+  } else if (digits.startsWith(countryCode)) {
+    const isBrazil = countryCode === BRAZIL_PHONE_CODE;
+    const hasCountryPrefix = isBrazil ? digits.length >= 12 : true;
+    if (hasCountryPrefix) digits = digits.slice(countryCode.length);
+  }
+
+  if (countryCode === BRAZIL_PHONE_CODE && digits.length === 10) {
+    digits = `${digits.slice(0, 2)}9${digits.slice(2)}`;
+  }
+
+  const normalizedPhone = `+${countryCode}${digits}`;
+  console.log(
+    `[c2rioCompraSiteSucesso] telefone normalizado | país=${country} | recebido=${originalValue} | enviado=${normalizedPhone}`,
+  );
+  return normalizedPhone;
+};
+
 const padNumber = (number) => String(number).padStart(2, "0");
 
 const toDateString = (raw) => {
@@ -190,6 +256,9 @@ const toVisitDateTimeMs = (raw) => {
 
 const convertField = (field, payload) => {
   let valor = payload[field.from];
+  if (field.type === "phone") {
+    return toPhone(valor, payload.country);
+  }
   if (field.type === "idioma") {
     valor = payload.cf_language || payload.cf_lingua;
   }
