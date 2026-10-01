@@ -466,7 +466,12 @@ exports.main = async (event, callback) => {
       deal_id: resolvedDealId,
     });
   } catch (error) {
-    console.error("[bondinhoCompraSiteNegadaCartao] error:", buildErrorMessage(error));
+    // Grava etapa, status e resposta da API na própria mensagem do erro, para a
+    // falha da action no histórico do workflow já mostrar a causa. O erro
+    // original é relançado (mantém status e response) para o HubSpot aplicar
+    // as novas tentativas em 429 e 5xx.
+    error.message = buildErrorMessage(error);
+    console.error("[bondinhoCompraSiteNegadaCartao] error:", error.message);
     throw error;
   }
 };
