@@ -1,5 +1,29 @@
 const axios = require("axios");
 
+// Códigos de erro da API de produtores do painel, usados quando a resposta vem sem "message"
+const PAINEL_ERRORS = {
+  1001: { status: 401, message: "x-api-key ausente ou inválida" },
+  1002: { status: 400, message: "corpo ausente ou JSON malformado" },
+  1003: { status: 400, message: "campo obrigatório ausente ou em formato inválido" },
+  2002: { status: 404, message: "comercial_id não encontrado" },
+  2004: { status: 404, message: "cidade/estado não cadastrados" },
+  2005: { status: 404, message: "praca_id não existe ou está inativo" },
+  9001: { status: 500, message: "falha inesperada" },
+};
+
+function parseApiError(error) {
+  const data = error.response?.data;
+  const errorCode = typeof data?.error === "number" ? data.error : null;
+  const known = PAINEL_ERRORS[errorCode];
+
+  // Sem response: timeout ou falha de rede, nunca chegou ao painel
+  const errorStatus = error.response?.status ?? known?.status ?? null;
+  const errorMessage =
+    data?.message || known?.message || error.message || "erro desconhecido";
+
+  return { errorStatus, errorCode, errorMessage };
+}
+
 function onlyDigits(value) {
   return value ? value.replace(/\D/g, "").replace(/^55/, "") : value;
 }
@@ -98,20 +122,24 @@ exports.main = async (event, callback) => {
         producerId: producerId,
         comercialId: ownerId,
         error: false,
+        errorStatus: null,
+        errorCode: null,
         errorMessage: "",
       },
     });
   } catch (error) {
-    const errorMessage =
-      error.response?.data?.error ||
-      error.response?.data?.message ||
-      error.message;
-    console.error("Erro ao criar produtor no painel:", errorMessage);
+    const { errorStatus, errorCode, errorMessage } = parseApiError(error);
+    console.error(
+      `Erro ao criar produtor no painel [${errorStatus}/${errorCode}]:`,
+      errorMessage,
+    );
     return callback({
       outputFields: {
         hs_execution_state: "ERROR",
         error: true,
-        errorMessage: "Erro ao criar produtor no painel: " + errorMessage,
+        errorStatus,
+        errorCode,
+        errorMessage,
       },
     });
   }
