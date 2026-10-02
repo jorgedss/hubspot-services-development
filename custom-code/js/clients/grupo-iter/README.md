@@ -20,6 +20,8 @@ custom-code/js/clients/grupo-iter/
 │   ├── compraSiteSucesso.js       # evento compra-site-sucesso
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
 │   ├── compraSiteNegadaCartao.js # evento compra-site-negada-cartao
+│   ├── cancelamentoTotal.js       # evento cancelamento (total)
+│   ├── reagendamento.js           # evento reagendamento
 │   └── addToCart.js               # evento add-to-cart
 ├── bondinho/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
@@ -34,7 +36,9 @@ custom-code/js/clients/grupo-iter/
 │   ├── compraSiteSucesso.js          # evento compra-site-sucesso
 │   ├── compraSiteNegadaAntifraude.js # evento compra-site-negada-antifraude
 │   ├── compraSiteNegadaCartao.js     # evento compra-site-negada-cartao
-│   └── carrinhoAbandonado.js         # evento carrinho-abandonado
+│   ├── carrinhoAbandonado.js         # evento carrinho-abandonado
+│   ├── cancelamentoTotal.js          # evento cancelamento (total)
+│   └── reagendamento.js              # evento reagendamento
 └── README.md
 ```
 
@@ -72,6 +76,8 @@ Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554143`.
 | compra-site-sucesso | `caracol/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/RM4uojm` |
 | compra-site-negada-antifraude | `caracol/compraSiteNegadaAntifraude.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/ehvfyMw` |
 | compra-site-negada-cartao | `caracol/compraSiteNegadaCartao.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/acv4ud2` |
+| cancelamento | `caracol/cancelamentoTotal.js` | produção | a cadastrar |
+| reagendamento | `caracol/reagendamento.js` | produção | a cadastrar |
 
 ---
 
@@ -84,3 +90,5 @@ Brand da unidade de negócio: `hs_all_assigned_business_unit_ids = 4554144`.
 | compra-site-sucesso | `c2rio/compraSiteSucesso.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/Ok2f2Of` |
 | compra-site-negada-antifraude | `c2rio/compraSiteNegadaAntifraude.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/U3AANb4` |
 | compra-site-negada-cartao | `c2rio/compraSiteNegadaCartao.js` | sandbox | `https://api.hubapi.com/automation/v4/webhook-triggers/52050136/KQ6M6My` |
+| cancelamento | `c2rio/cancelamentoTotal.js` | produção | a cadastrar |
+| reagendamento | `c2rio/reagendamento.js` | produção | a cadastrar |
